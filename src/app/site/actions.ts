@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { getTask, updateTaskStatus } from "@/lib/data/tasks";
 import { addProof } from "@/lib/data/proofs";
-import { saveProofFileLocally } from "@/lib/storage/local-upload";
+import { saveProofFile } from "@/lib/storage/upload";
 import type { TaskStatus } from "@/lib/data/types";
 
 async function requireOwnTask(taskId: string) {
@@ -47,7 +47,7 @@ export async function submitProofAction(
     let photoUrl = "";
     if (photo && photo.size > 0) {
       const buffer = Buffer.from(await photo.arrayBuffer());
-      const uploaded = await saveProofFileLocally({
+      const uploaded = await saveProofFile({
         name: `${taskId}-${photo.name}`,
         buffer,
       });
