@@ -1,7 +1,8 @@
 export type Role = "owner" | "office_staff" | "site_staff";
 export type SiteStatus = "active" | "inactive";
 export type TaskPriority = "low" | "normal" | "urgent";
-export type TaskStatus = "pending" | "in_progress" | "completed";
+export type TaskStatus = "pending" | "in_progress" | "completed" | "approved";
+export type QueryStatus = "open" | "answered";
 
 export interface Site {
   id: string;
@@ -9,6 +10,9 @@ export interface Site {
   address: string;
   status: SiteStatus;
   createdAt: string;
+  briefText: string;
+  briefFileUrl: string;
+  briefFileName: string;
 }
 
 export interface Staff {
@@ -35,6 +39,11 @@ export interface Task {
   proofRequired: boolean;
   createdAt: string;
   updatedAt: string;
+  resourceLink: string;
+  resourceFileUrl: string;
+  resourceFileName: string;
+  approvedBy: string;
+  approvedAt: string;
 }
 
 export interface Proof {
@@ -65,4 +74,26 @@ export interface User {
   passwordHash: string;
   staffId: string;
   createdAt: string;
+}
+
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  authorId: string;
+  authorRole: Role;
+  message: string;
+  createdAt: string;
+}
+
+export interface Query {
+  id: string;
+  raisedBy: string;
+  siteId: string;
+  taskId: string;
+  message: string;
+  status: QueryStatus;
+  reply: string;
+  repliedBy: string;
+  createdAt: string;
+  repliedAt: string;
 }

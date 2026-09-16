@@ -6,6 +6,8 @@ const ownerNav = [
   { href: "/tasks", label: "Tasks" },
   { href: "/sites", label: "Sites" },
   { href: "/staff", label: "Staff" },
+  { href: "/queries", label: "Queries" },
+  { href: "/insights", label: "Insights" },
 ];
 
 export function AppShell({

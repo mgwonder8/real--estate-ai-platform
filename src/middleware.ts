@@ -30,7 +30,9 @@ export default auth((req) => {
     (nextUrl.pathname.startsWith("/dashboard") ||
       nextUrl.pathname.startsWith("/tasks") ||
       nextUrl.pathname.startsWith("/sites") ||
-      nextUrl.pathname.startsWith("/staff")) &&
+      nextUrl.pathname.startsWith("/staff") ||
+      nextUrl.pathname.startsWith("/queries") ||
+      nextUrl.pathname.startsWith("/insights")) &&
     role === "site_staff"
   ) {
     return NextResponse.redirect(new URL("/site", nextUrl));

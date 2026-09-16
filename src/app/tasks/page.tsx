@@ -7,35 +7,46 @@ import { listTasks } from "@/lib/data/tasks";
 import { listSites } from "@/lib/data/sites";
 import { listStaff } from "@/lib/data/staff";
 import { listAllProofs } from "@/lib/data/proofs";
+import { listAllTaskComments } from "@/lib/data/task-comments";
 import { createTaskAction, updateTaskStatusAction } from "@/app/tasks/actions";
+import { TaskReviewForm } from "@/app/tasks/task-review-form";
+import { CommentThread } from "@/app/tasks/comment-thread";
 import type { TaskStatus } from "@/lib/data/types";
 
 export default async function TasksPage() {
   const session = await auth();
-  const [tasks, sites, staff, proofs] = await Promise.all([
+  const [tasks, sites, staff, proofs, comments] = await Promise.all([
     listTasks(),
     listSites(),
     listStaff(),
     listAllProofs(),
+    listAllTaskComments(),
   ]);
 
   const siteById = Object.fromEntries(sites.map((s) => [s.id, s]));
   const staffById = Object.fromEntries(staff.map((s) => [s.id, s]));
   const assignableStaff = staff.filter((s) => s.active);
+
   const proofsByTask = new Map<string, typeof proofs>();
   for (const proof of proofs) {
     proofsByTask.set(proof.taskId, [...(proofsByTask.get(proof.taskId) ?? []), proof]);
+  }
+  const commentsByTask = new Map<string, typeof comments>();
+  for (const comment of comments) {
+    commentsByTask.set(comment.taskId, [...(commentsByTask.get(comment.taskId) ?? []), comment]);
   }
 
   const nextStatus: Record<TaskStatus, TaskStatus | null> = {
     pending: "in_progress",
     in_progress: "completed",
     completed: null,
+    approved: null,
   };
   const nextLabel: Record<TaskStatus, string> = {
     pending: "Start",
     in_progress: "Mark Complete",
     completed: "",
+    approved: "",
   };
 
   return (
@@ -82,6 +93,12 @@ export default async function TasksPage() {
           <Field label="Deadline">
             <input name="deadline" type="date" className={inputClass} />
           </Field>
+          <Field label="Resource link (optional)">
+            <input name="resourceLink" type="url" placeholder="https://…" className={inputClass} />
+          </Field>
+          <Field label="Attach a file (optional)">
+            <input name="resourceFile" type="file" className="w-full text-sm" />
+          </Field>
           <label className="flex items-center gap-2 text-sm text-slate-600 sm:col-span-2">
             <input type="checkbox" name="proofRequired" defaultChecked className="rounded border-slate-300" />
             Require photo/video proof before this task can be marked complete
@@ -103,6 +120,7 @@ export default async function TasksPage() {
             const assignee = staffById[task.assigneeId];
             const upcoming = nextStatus[task.status];
             const taskProofs = proofsByTask.get(task.id) ?? [];
+            const taskComments = commentsByTask.get(task.id) ?? [];
             return (
               <div key={task.id} className="px-5 py-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -116,6 +134,20 @@ export default async function TasksPage() {
                       {site?.name ?? "Unknown site"} · {assignee?.name ?? "Unassigned"}
                       {task.deadline && ` · Due ${task.deadline}`}
                     </p>
+                    {(task.resourceLink || task.resourceFileUrl) && (
+                      <p className="mt-1 flex flex-wrap gap-3 text-xs">
+                        {task.resourceLink && (
+                          <a href={task.resourceLink} target="_blank" rel="noopener noreferrer" className="text-brand-navy hover:underline">
+                            🔗 Linked resource
+                          </a>
+                        )}
+                        {task.resourceFileUrl && (
+                          <a href={task.resourceFileUrl} target="_blank" rel="noopener noreferrer" className="text-brand-navy hover:underline">
+                            📎 {task.resourceFileName || "Attached file"}
+                          </a>
+                        )}
+                      </p>
+                    )}
                   </div>
                   {upcoming && (
                     <form action={updateTaskStatusAction}>
@@ -125,6 +157,16 @@ export default async function TasksPage() {
                     </form>
                   )}
                 </div>
+
+                {task.status === "completed" && <TaskReviewForm taskId={task.id} />}
+
+                {task.status === "approved" && task.approvedBy && (
+                  <p className="mt-2 text-xs text-emerald-700">
+                    Approved by {staffById[task.approvedBy]?.name ?? "owner"} ·{" "}
+                    {task.approvedAt && new Date(task.approvedAt).toLocaleString()}
+                  </p>
+                )}
+
                 {taskProofs.length > 0 && (
                   <details className="mt-2">
                     <summary className="cursor-pointer text-xs font-medium text-brand-navy">
@@ -146,6 +188,20 @@ export default async function TasksPage() {
                             <p className="mt-0.5 text-xs text-slate-500">
                               {staffById[proof.submittedBy]?.name ?? "Unknown"} ·{" "}
                               {new Date(proof.submittedAt).toLocaleString()}
+                              {proof.gpsLat && proof.gpsLng && (
+                                <>
+                                  {" "}
+                                  ·{" "}
+                                  <a
+                                    href={`https://maps.google.com/?q=${proof.gpsLat},${proof.gpsLng}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-brand-navy hover:underline"
+                                  >
+                                    View location
+                                  </a>
+                                </>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -153,6 +209,13 @@ export default async function TasksPage() {
                     </div>
                   </details>
                 )}
+
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-xs font-medium text-brand-navy">
+                    {taskComments.length > 0 ? `${taskComments.length} comment${taskComments.length === 1 ? "" : "s"}` : "Add a comment"}
+                  </summary>
+                  <CommentThread taskId={task.id} comments={taskComments} staffById={staffById} />
+                </details>
               </div>
             );
           })}

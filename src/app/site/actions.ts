@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { getTask, updateTaskStatus } from "@/lib/data/tasks";
 import { addProof } from "@/lib/data/proofs";
+import { raiseQuery } from "@/lib/data/queries";
+import { addTaskComment } from "@/lib/data/task-comments";
 import { saveProofFile } from "@/lib/storage/upload";
-import type { TaskStatus } from "@/lib/data/types";
+import type { Role, TaskStatus } from "@/lib/data/types";
 
 async function requireOwnTask(taskId: string) {
   const session = await auth();
@@ -69,4 +71,39 @@ export async function submitProofAction(
   } catch (err) {
     return { status: "error", message: err instanceof Error ? err.message : "Failed to submit proof" };
   }
+}
+
+export async function addOwnTaskCommentAction(formData: FormData) {
+  const taskId = String(formData.get("taskId") ?? "");
+  const message = String(formData.get("message") ?? "").trim();
+  if (!message) return;
+  const { session } = await requireOwnTask(taskId);
+
+  await addTaskComment({
+    taskId,
+    authorId: session.user.id,
+    authorRole: session.user.role as Role,
+    message,
+  });
+
+  revalidatePath("/site");
+  revalidatePath("/tasks");
+}
+
+export async function raiseQueryAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Not authenticated");
+
+  const message = String(formData.get("message") ?? "").trim();
+  if (!message) return;
+
+  await raiseQuery({
+    raisedBy: session.user.id,
+    siteId: session.user.siteId || undefined,
+    taskId: String(formData.get("taskId") ?? "") || undefined,
+    message,
+  });
+
+  revalidatePath("/site");
+  revalidatePath("/queries");
 }

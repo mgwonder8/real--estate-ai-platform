@@ -3,13 +3,15 @@ import type { TaskPriority, TaskStatus } from "@/lib/data/types";
 const statusStyles: Record<TaskStatus, string> = {
   pending: "bg-slate-100 text-slate-700 ring-slate-300",
   in_progress: "bg-amber-100 text-amber-800 ring-amber-300",
-  completed: "bg-emerald-100 text-emerald-800 ring-emerald-300",
+  completed: "bg-blue-100 text-blue-800 ring-blue-300",
+  approved: "bg-emerald-100 text-emerald-800 ring-emerald-300",
 };
 
 const statusLabels: Record<TaskStatus, string> = {
   pending: "Pending",
   in_progress: "In Progress",
-  completed: "Completed",
+  completed: "Awaiting Approval",
+  approved: "Approved",
 };
 
 const priorityStyles: Record<TaskPriority, string> = {

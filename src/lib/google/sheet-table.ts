@@ -3,12 +3,33 @@ import { env } from "@/lib/env";
 
 export type SheetRow = Record<string, string>;
 
+const headerCache = new Map<string, string[]>();
+
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  const maxAttempts = 5;
+  let attempt = 0;
+  for (;;) {
+    try {
+      return await fn();
+    } catch (err) {
+      const status = (err as { code?: number; status?: number })?.code ?? (err as { status?: number })?.status;
+      attempt += 1;
+      if (status !== 429 || attempt >= maxAttempts) throw err;
+      const delayMs = 1000 * 2 ** attempt + Math.random() * 500;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+}
+
 async function getHeaders(sheets: ReturnType<typeof getSheetsClient>, tab: string): Promise<string[]> {
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: env.spreadsheetId,
-    range: `${tab}!1:1`,
-  });
-  return (res.data.values?.[0] ?? []).map((h) => String(h));
+  const cached = headerCache.get(tab);
+  if (cached) return cached;
+  const res = await withRetry(() =>
+    sheets.spreadsheets.values.get({ spreadsheetId: env.spreadsheetId, range: `${tab}!1:1` })
+  );
+  const headers = (res.data.values?.[0] ?? []).map((h) => String(h));
+  headerCache.set(tab, headers);
+  return headers;
 }
 
 function rowArrayToObject(headers: string[], row: string[]): SheetRow {
@@ -27,10 +48,12 @@ function objectToRowArray(headers: string[], obj: SheetRow): string[] {
 export async function readTable(tab: string): Promise<{ headers: string[]; rows: { rowNumber: number; data: SheetRow }[] }> {
   const sheets = getSheetsClient();
   const headers = await getHeaders(sheets, tab);
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: env.spreadsheetId,
-    range: `${tab}!A2:${columnLetter(headers.length)}`,
-  });
+  const res = await withRetry(() =>
+    sheets.spreadsheets.values.get({
+      spreadsheetId: env.spreadsheetId,
+      range: `${tab}!A2:${columnLetter(headers.length)}`,
+    })
+  );
   const values = res.data.values ?? [];
   const rows = values
     .map((row, i) => ({ rowNumber: i + 2, data: rowArrayToObject(headers, row as string[]) }))
@@ -41,28 +64,51 @@ export async function readTable(tab: string): Promise<{ headers: string[]; rows:
 export async function appendRow(tab: string, obj: SheetRow): Promise<void> {
   const sheets = getSheetsClient();
   const headers = await getHeaders(sheets, tab);
-  await sheets.spreadsheets.values.append({
-    spreadsheetId: env.spreadsheetId,
-    range: `${tab}!A:A`,
-    valueInputOption: "USER_ENTERED",
-    requestBody: { values: [objectToRowArray(headers, obj)] },
-  });
+  await withRetry(() =>
+    sheets.spreadsheets.values.append({
+      spreadsheetId: env.spreadsheetId,
+      range: `${tab}!A:A`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [objectToRowArray(headers, obj)] },
+    })
+  );
 }
 
 export async function updateRow(tab: string, rowNumber: number, obj: SheetRow): Promise<void> {
   const sheets = getSheetsClient();
   const headers = await getHeaders(sheets, tab);
-  await sheets.spreadsheets.values.update({
-    spreadsheetId: env.spreadsheetId,
-    range: `${tab}!A${rowNumber}:${columnLetter(headers.length)}${rowNumber}`,
-    valueInputOption: "USER_ENTERED",
-    requestBody: { values: [objectToRowArray(headers, obj)] },
-  });
+  await withRetry(() =>
+    sheets.spreadsheets.values.update({
+      spreadsheetId: env.spreadsheetId,
+      range: `${tab}!A${rowNumber}:${columnLetter(headers.length)}${rowNumber}`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [objectToRowArray(headers, obj)] },
+    })
+  );
 }
 
 export async function findRowById(tab: string, id: string): Promise<{ rowNumber: number; data: SheetRow } | null> {
   const { rows } = await readTable(tab);
   return rows.find((r) => r.data.id === id) ?? null;
+}
+
+/** Blanks out a row so it's excluded from future reads, without shifting other rows. */
+export async function clearRow(tab: string, rowNumber: number): Promise<void> {
+  const sheets = getSheetsClient();
+  const headers = await getHeaders(sheets, tab);
+  await withRetry(() =>
+    sheets.spreadsheets.values.clear({
+      spreadsheetId: env.spreadsheetId,
+      range: `${tab}!A${rowNumber}:${columnLetter(headers.length)}${rowNumber}`,
+    })
+  );
+}
+
+export async function deleteRowById(tab: string, id: string): Promise<boolean> {
+  const row = await findRowById(tab, id);
+  if (!row) return false;
+  await clearRow(tab, row.rowNumber);
+  return true;
 }
 
 function columnLetter(count: number): string {

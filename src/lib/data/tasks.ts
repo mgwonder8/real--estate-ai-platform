@@ -1,7 +1,8 @@
 import { appendRow, readTable, updateRow, findRowById } from "@/lib/google/sheet-table";
 import { newId } from "@/lib/ids";
 import { addTaskUpdate } from "@/lib/data/task-updates";
-import type { Task, TaskPriority, TaskStatus } from "@/lib/data/types";
+import { addTaskComment } from "@/lib/data/task-comments";
+import type { Role, Task, TaskPriority, TaskStatus } from "@/lib/data/types";
 
 const TAB = "Tasks";
 
@@ -19,6 +20,11 @@ function toTask(data: Record<string, string>): Task {
     proofRequired: data.proof_required === "TRUE" || data.proof_required === "true",
     createdAt: data.created_at,
     updatedAt: data.updated_at,
+    resourceLink: data.resource_link ?? "",
+    resourceFileUrl: data.resource_file_url ?? "",
+    resourceFileName: data.resource_file_name ?? "",
+    approvedBy: data.approved_by ?? "",
+    approvedAt: data.approved_at ?? "",
   };
 }
 
@@ -51,6 +57,9 @@ export async function createTask(input: {
   priority: TaskPriority;
   deadline: string;
   proofRequired: boolean;
+  resourceLink?: string;
+  resourceFileUrl?: string;
+  resourceFileName?: string;
 }): Promise<Task> {
   const now = new Date().toISOString();
   const task: Task = {
@@ -66,6 +75,11 @@ export async function createTask(input: {
     proofRequired: input.proofRequired,
     createdAt: now,
     updatedAt: now,
+    resourceLink: input.resourceLink ?? "",
+    resourceFileUrl: input.resourceFileUrl ?? "",
+    resourceFileName: input.resourceFileName ?? "",
+    approvedBy: "",
+    approvedAt: "",
   };
   await appendRow(TAB, {
     id: task.id,
@@ -80,6 +94,11 @@ export async function createTask(input: {
     proof_required: task.proofRequired ? "TRUE" : "FALSE",
     created_at: task.createdAt,
     updated_at: task.updatedAt,
+    resource_link: task.resourceLink,
+    resource_file_url: task.resourceFileUrl,
+    resource_file_name: task.resourceFileName,
+    approved_by: "",
+    approved_at: "",
   });
   return task;
 }
@@ -101,5 +120,65 @@ export async function updateTaskStatus(input: {
     toStatus: input.toStatus,
     changedBy: input.changedBy,
     note: input.note ?? "",
+  });
+}
+
+/** Owner/office approves a completed task, marking it final. */
+export async function approveTask(input: {
+  taskId: string;
+  approvedBy: string;
+  approverRole: Role;
+  comment?: string;
+}): Promise<void> {
+  const row = await findRowById(TAB, input.taskId);
+  if (!row) throw new Error(`Task not found: ${input.taskId}`);
+  const now = new Date().toISOString();
+  await updateRow(TAB, row.rowNumber, {
+    ...row.data,
+    status: "approved",
+    updated_at: now,
+    approved_by: input.approvedBy,
+    approved_at: now,
+  });
+  await addTaskUpdate({
+    taskId: input.taskId,
+    fromStatus: row.data.status || "completed",
+    toStatus: "approved",
+    changedBy: input.approvedBy,
+    note: input.comment ?? "",
+  });
+  if (input.comment) {
+    await addTaskComment({
+      taskId: input.taskId,
+      authorId: input.approvedBy,
+      authorRole: input.approverRole,
+      message: input.comment,
+    });
+  }
+}
+
+/** Owner/office sends completed work back for rework, with required feedback. */
+export async function requestTaskChanges(input: {
+  taskId: string;
+  requestedBy: string;
+  requesterRole: Role;
+  comment: string;
+}): Promise<void> {
+  const row = await findRowById(TAB, input.taskId);
+  if (!row) throw new Error(`Task not found: ${input.taskId}`);
+  const now = new Date().toISOString();
+  await updateRow(TAB, row.rowNumber, { ...row.data, status: "in_progress", updated_at: now });
+  await addTaskUpdate({
+    taskId: input.taskId,
+    fromStatus: row.data.status || "completed",
+    toStatus: "in_progress",
+    changedBy: input.requestedBy,
+    note: input.comment,
+  });
+  await addTaskComment({
+    taskId: input.taskId,
+    authorId: input.requestedBy,
+    authorRole: input.requesterRole,
+    message: input.comment,
   });
 }

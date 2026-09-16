@@ -16,12 +16,14 @@ function toTaskUpdate(data: Record<string, string>): TaskUpdate {
   };
 }
 
-export async function listTaskUpdatesForTask(taskId: string): Promise<TaskUpdate[]> {
+export async function listAllTaskUpdates(): Promise<TaskUpdate[]> {
   const { rows } = await readTable(TAB);
-  return rows
-    .map((r) => toTaskUpdate(r.data))
-    .filter((u) => u.taskId === taskId)
-    .sort((a, b) => a.changedAt.localeCompare(b.changedAt));
+  return rows.map((r) => toTaskUpdate(r.data)).sort((a, b) => a.changedAt.localeCompare(b.changedAt));
+}
+
+export async function listTaskUpdatesForTask(taskId: string): Promise<TaskUpdate[]> {
+  const all = await listAllTaskUpdates();
+  return all.filter((u) => u.taskId === taskId);
 }
 
 export async function addTaskUpdate(input: {

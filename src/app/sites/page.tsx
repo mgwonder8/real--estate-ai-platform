@@ -4,7 +4,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { listSites } from "@/lib/data/sites";
 import { listStaff } from "@/lib/data/staff";
-import { createSiteAction } from "@/app/sites/actions";
+import { createSiteAction, updateSiteBriefAction } from "@/app/sites/actions";
 
 export default async function SitesPage() {
   const session = await auth();
@@ -18,7 +18,7 @@ export default async function SitesPage() {
       </div>
 
       <Card className="mb-6">
-        <CardHeader title="Add Site" />
+        <CardHeader title="Add Site" subtitle="Optionally attach a project brief that site staff will be able to see." />
         <form action={createSiteAction} className="grid grid-cols-1 gap-4 px-5 py-5 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Name</label>
@@ -27,6 +27,14 @@ export default async function SitesPage() {
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Address</label>
             <input name="address" className={inputClass} placeholder="Street, city" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-slate-700">Project brief (text)</label>
+            <textarea name="briefText" rows={3} className={inputClass} placeholder="Scope, key dates, points of contact…" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-slate-700">Project brief (file, optional)</label>
+            <input name="briefFile" type="file" className="w-full text-sm" />
           </div>
           <div className="sm:col-span-2">
             <Button type="submit">Add Site</Button>
@@ -43,12 +51,41 @@ export default async function SitesPage() {
           {sites.map((site) => {
             const siteStaff = staff.filter((s) => s.siteId === site.id && s.role === "site_staff");
             return (
-              <div key={site.id} className="flex items-center justify-between px-5 py-4">
-                <div>
-                  <p className="font-medium text-slate-900">{site.name}</p>
-                  <p className="text-sm text-slate-500">{site.address || "No address on file"}</p>
+              <div key={site.id} className="px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-slate-900">{site.name}</p>
+                    <p className="text-sm text-slate-500">{site.address || "No address on file"}</p>
+                  </div>
+                  <div className="text-sm text-slate-500">{siteStaff.length} site staff</div>
                 </div>
-                <div className="text-sm text-slate-500">{siteStaff.length} site staff</div>
+                {(site.briefText || site.briefFileUrl) && (
+                  <div className="mt-2 rounded-lg bg-slate-50 p-3 text-sm">
+                    {site.briefText && <p className="text-slate-700">{site.briefText}</p>}
+                    {site.briefFileUrl && (
+                      <a href={site.briefFileUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-brand-navy hover:underline">
+                        📎 {site.briefFileName || "View document"}
+                      </a>
+                    )}
+                  </div>
+                )}
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-xs font-medium text-brand-navy">
+                    {site.briefText || site.briefFileUrl ? "Update brief" : "Add project brief"}
+                  </summary>
+                  <form action={updateSiteBriefAction} className="mt-2 space-y-2">
+                    <input type="hidden" name="siteId" value={site.id} />
+                    <textarea
+                      name="briefText"
+                      rows={2}
+                      defaultValue={site.briefText}
+                      className={inputClass}
+                      placeholder="Scope, key dates, points of contact…"
+                    />
+                    <input name="briefFile" type="file" className="w-full text-sm" />
+                    <Button type="submit" variant="secondary">Save Brief</Button>
+                  </form>
+                </details>
               </div>
             );
           })}

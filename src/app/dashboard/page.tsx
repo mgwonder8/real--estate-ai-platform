@@ -5,6 +5,8 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { listSites } from "@/lib/data/sites";
 import { listTasks } from "@/lib/data/tasks";
 import { listStaff } from "@/lib/data/staff";
+import { isAiEnabled } from "@/lib/ai/openai";
+import { AiTaskChat } from "@/app/dashboard/ai-task-chat";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -14,6 +16,7 @@ export default async function DashboardPage() {
   const totalPending = tasks.filter((t) => t.status === "pending").length;
   const totalInProgress = tasks.filter((t) => t.status === "in_progress").length;
   const totalCompleted = tasks.filter((t) => t.status === "completed").length;
+  const totalApproved = tasks.filter((t) => t.status === "approved").length;
 
   const perSite = sites.map((site) => {
     const siteTasks = tasks.filter((t) => t.siteId === site.id);
@@ -23,7 +26,7 @@ export default async function DashboardPage() {
       staffCount: siteStaff.length,
       pending: siteTasks.filter((t) => t.status === "pending").length,
       inProgress: siteTasks.filter((t) => t.status === "in_progress").length,
-      completed: siteTasks.filter((t) => t.status === "completed").length,
+      completed: siteTasks.filter((t) => t.status === "completed" || t.status === "approved").length,
       latest: siteTasks[0],
     };
   });
@@ -40,10 +43,28 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <Card className="mb-6">
+        <CardHeader
+          title="Quick Add via Chat"
+          subtitle="Type an instruction like normal — AI drafts the task, you confirm before it's created."
+        />
+        <div className="px-5 py-5">
+          {isAiEnabled() ? (
+            <AiTaskChat sites={sites} staff={staff} />
+          ) : (
+            <p className="text-sm text-slate-500">
+              AI task parsing isn&apos;t configured yet (missing <code className="rounded bg-slate-100 px-1">OPENAI_API_KEY</code>).
+              Use the full form on the <Link href="/tasks" className="text-brand-navy hover:underline">Tasks</Link> page instead.
+            </p>
+          )}
+        </div>
+      </Card>
+
+      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <SummaryCard label="Pending" value={totalPending} />
         <SummaryCard label="In Progress" value={totalInProgress} />
-        <SummaryCard label="Completed" value={totalCompleted} />
+        <SummaryCard label="Awaiting Approval" value={totalCompleted} />
+        <SummaryCard label="Approved" value={totalApproved} />
       </div>
 
       {sites.length === 0 ? (
@@ -59,7 +80,7 @@ export default async function DashboardPage() {
                 subtitle={`${site.address || "No address on file"} · ${staffCount} site staff`}
               />
               <div className="space-y-3 px-5 py-4">
-                <div className="flex gap-2 text-xs text-slate-600">
+                <div className="flex flex-wrap gap-2 text-xs text-slate-600">
                   <span className="rounded-full bg-slate-100 px-2.5 py-1">{pending} pending</span>
                   <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">{inProgress} in progress</span>
                   <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-800">{completed} completed</span>
