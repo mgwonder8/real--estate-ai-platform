@@ -51,7 +51,8 @@ export async function generateStaffSummaryAction(_prev: AiTextState, formData: F
   }
 }
 
-export async function generatePortfolioInsightsAction(_prev: AiTextState): Promise<AiTextState> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- useActionState requires this signature
+export async function generatePortfolioInsightsAction(_prev: AiTextState, _formData: FormData): Promise<AiTextState> {
   try {
     const [sites, tasks] = await Promise.all([listSites(), listTasks()]);
     const staff = await listStaff();
