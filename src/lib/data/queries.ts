@@ -16,6 +16,8 @@ function toQuery(data: Record<string, string>): Query {
     repliedBy: data.replied_by ?? "",
     createdAt: data.created_at,
     repliedAt: data.replied_at ?? "",
+    gpsLat: data.gps_lat ?? "",
+    gpsLng: data.gps_lng ?? "",
   };
 }
 
@@ -34,6 +36,8 @@ export async function raiseQuery(input: {
   siteId?: string;
   taskId?: string;
   message: string;
+  gpsLat?: string;
+  gpsLng?: string;
 }): Promise<Query> {
   const query: Query = {
     id: newId("qry"),
@@ -46,6 +50,8 @@ export async function raiseQuery(input: {
     repliedBy: "",
     createdAt: new Date().toISOString(),
     repliedAt: "",
+    gpsLat: input.gpsLat ?? "",
+    gpsLng: input.gpsLng ?? "",
   };
   await appendRow(TAB, {
     id: query.id,
@@ -58,6 +64,8 @@ export async function raiseQuery(input: {
     replied_by: "",
     created_at: query.createdAt,
     replied_at: "",
+    gps_lat: query.gpsLat,
+    gps_lng: query.gpsLng,
   });
   return query;
 }

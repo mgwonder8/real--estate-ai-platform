@@ -32,6 +32,12 @@ export async function listStaffBySite(siteId: string): Promise<Staff[]> {
   return all.filter((s) => s.siteId === siteId);
 }
 
+/** Owner + office staff — the recipients for site-staff-initiated notifications. */
+export async function listOfficeAndOwnerStaffIds(): Promise<string[]> {
+  const all = await listStaff();
+  return all.filter((s) => s.active && (s.role === "owner" || s.role === "office_staff")).map((s) => s.id);
+}
+
 export async function createStaff(input: {
   name: string;
   role: Role;

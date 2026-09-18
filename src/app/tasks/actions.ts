@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { createTask, updateTaskStatus, approveTask, requestTaskChanges } from "@/lib/data/tasks";
+import { createTask, updateTaskStatus, approveTask, requestTaskChanges, getTask } from "@/lib/data/tasks";
 import { addTaskComment } from "@/lib/data/task-comments";
 import { saveProofFile } from "@/lib/storage/upload";
+import { listOfficeAndOwnerStaffIds } from "@/lib/data/staff";
+import { notifyStaff, notifyManyStaff } from "@/lib/push/send";
 import type { TaskPriority, TaskStatus } from "@/lib/data/types";
 
 function revalidateTaskPaths() {
@@ -28,11 +30,14 @@ export async function createTaskAction(formData: FormData) {
     resourceFileName = file.name;
   }
 
+  const title = String(formData.get("title") ?? "");
+  const assigneeId = String(formData.get("assigneeId") ?? "");
+
   await createTask({
-    title: String(formData.get("title") ?? ""),
+    title,
     brief: String(formData.get("brief") ?? ""),
     siteId: String(formData.get("siteId") ?? ""),
-    assigneeId: String(formData.get("assigneeId") ?? ""),
+    assigneeId,
     createdBy: session.user.id,
     priority: (String(formData.get("priority") ?? "normal") as TaskPriority),
     deadline: String(formData.get("deadline") ?? ""),
@@ -43,33 +48,61 @@ export async function createTaskAction(formData: FormData) {
   });
 
   revalidateTaskPaths();
+
+  await notifyStaff(assigneeId, {
+    title: "New task assigned",
+    body: title,
+    url: "/site",
+  });
 }
 
 export async function updateTaskStatusAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) throw new Error("Not authenticated");
 
-  await updateTaskStatus({
-    taskId: String(formData.get("taskId") ?? ""),
-    toStatus: String(formData.get("toStatus") ?? "") as TaskStatus,
-    changedBy: session.user.id,
-  });
+  const taskId = String(formData.get("taskId") ?? "");
+  const toStatus = String(formData.get("toStatus") ?? "") as TaskStatus;
+
+  await updateTaskStatus({ taskId, toStatus, changedBy: session.user.id });
 
   revalidateTaskPaths();
+
+  if (toStatus === "completed") {
+    const task = await getTask(taskId);
+    if (task) {
+      const recipients = await listOfficeAndOwnerStaffIds();
+      await notifyManyStaff(recipients, {
+        title: "Task awaiting approval",
+        body: task.title,
+        url: "/tasks",
+      });
+    }
+  }
 }
 
 export async function approveTaskAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) throw new Error("Not authenticated");
 
+  const taskId = String(formData.get("taskId") ?? "");
+
   await approveTask({
-    taskId: String(formData.get("taskId") ?? ""),
+    taskId,
     approvedBy: session.user.id,
     approverRole: session.user.role as "owner" | "office_staff" | "site_staff",
     comment: String(formData.get("comment") ?? "") || undefined,
   });
 
   revalidateTaskPaths();
+
+  const task = await getTask(taskId);
+  if (task) {
+    await notifyStaff(task.assigneeId, {
+      title: "Task approved",
+      body: task.title,
+      url: "/site",
+    });
+  }
 }
 
 export async function requestTaskChangesAction(formData: FormData) {
@@ -79,14 +112,25 @@ export async function requestTaskChangesAction(formData: FormData) {
   const comment = String(formData.get("comment") ?? "").trim();
   if (!comment) throw new Error("A comment is required when requesting changes");
 
+  const taskId = String(formData.get("taskId") ?? "");
+
   await requestTaskChanges({
-    taskId: String(formData.get("taskId") ?? ""),
+    taskId,
     requestedBy: session.user.id,
     requesterRole: session.user.role as "owner" | "office_staff" | "site_staff",
     comment,
   });
 
   revalidateTaskPaths();
+
+  const task = await getTask(taskId);
+  if (task) {
+    await notifyStaff(task.assigneeId, {
+      title: "Changes requested on your task",
+      body: task.title,
+      url: "/site",
+    });
+  }
 }
 
 export async function addTaskCommentAction(formData: FormData) {
@@ -96,12 +140,25 @@ export async function addTaskCommentAction(formData: FormData) {
   const message = String(formData.get("message") ?? "").trim();
   if (!message) return;
 
+  const taskId = String(formData.get("taskId") ?? "");
+  const authorRole = session.user.role as "owner" | "office_staff" | "site_staff";
+
   await addTaskComment({
-    taskId: String(formData.get("taskId") ?? ""),
+    taskId,
     authorId: session.user.id,
-    authorRole: session.user.role as "owner" | "office_staff" | "site_staff",
+    authorRole,
     message,
   });
 
   revalidateTaskPaths();
+
+  const task = await getTask(taskId);
+  if (task) {
+    if (authorRole === "site_staff") {
+      const recipients = await listOfficeAndOwnerStaffIds();
+      await notifyManyStaff(recipients, { title: "New comment", body: message, url: "/tasks" });
+    } else {
+      await notifyStaff(task.assigneeId, { title: "New comment on your task", body: message, url: "/site" });
+    }
+  }
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { VoiceInputButton } from "@/components/voice-input-button";
 import { parseTaskChatAction, type ChatParseState } from "@/app/dashboard/actions";
 import { createTaskAction } from "@/app/tasks/actions";
 import type { Site, Staff } from "@/lib/data/types";
@@ -14,12 +15,15 @@ const inputClass =
 export function AiTaskChat({ sites, staff }: { sites: Site[]; staff: Staff[] }) {
   const [state, formAction, pending] = useActionState(parseTaskChatAction, initialState);
   const [dismissed, setDismissed] = useState(false);
+  const [message, setMessage] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
 
   const showDraft = state.status === "success" && !dismissed;
 
   return (
     <div className="space-y-3">
       <form
+        ref={formRef}
         action={(fd) => {
           setDismissed(false);
           formAction(fd);
@@ -28,9 +32,17 @@ export function AiTaskChat({ sites, staff }: { sites: Site[]; staff: Staff[] }) 
       >
         <input
           name="message"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
           placeholder='Try: "Urgent — check waterproofing on 5th floor at One World, assign to Ramesh, due Friday"'
           className={`${inputClass} flex-1`}
           required
+        />
+        <VoiceInputButton
+          onTranscribed={(text) => {
+            setMessage(text);
+            requestAnimationFrame(() => formRef.current?.requestSubmit());
+          }}
         />
         <Button type="submit" disabled={pending} className="sm:w-auto">
           {pending ? "Thinking…" : "Parse with AI"}

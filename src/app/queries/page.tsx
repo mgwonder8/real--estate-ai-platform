@@ -36,6 +36,16 @@ export default async function QueriesPage() {
                 {new Date(q.createdAt).toLocaleString()}
               </p>
               <p className="mt-1 text-sm text-slate-800">{q.message}</p>
+              {q.gpsLat && q.gpsLng && (
+                <a
+                  href={`https://maps.google.com/?q=${q.gpsLat},${q.gpsLng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-brand-navy hover:underline"
+                >
+                  📍 View location
+                </a>
+              )}
               <form action={replyToQueryAction} className="mt-2 flex flex-col gap-2 sm:flex-row">
                 <input type="hidden" name="queryId" value={q.id} />
                 <input

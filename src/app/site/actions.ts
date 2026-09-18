@@ -7,6 +7,8 @@ import { addProof } from "@/lib/data/proofs";
 import { raiseQuery } from "@/lib/data/queries";
 import { addTaskComment } from "@/lib/data/task-comments";
 import { saveProofFile } from "@/lib/storage/upload";
+import { listOfficeAndOwnerStaffIds } from "@/lib/data/staff";
+import { notifyManyStaff } from "@/lib/push/send";
 import type { Role, TaskStatus } from "@/lib/data/types";
 
 async function requireOwnTask(taskId: string) {
@@ -22,13 +24,22 @@ async function requireOwnTask(taskId: string) {
 export async function updateOwnTaskStatusAction(formData: FormData) {
   const taskId = String(formData.get("taskId") ?? "");
   const toStatus = String(formData.get("toStatus") ?? "") as TaskStatus;
-  const { session } = await requireOwnTask(taskId);
+  const { session, task } = await requireOwnTask(taskId);
 
   await updateTaskStatus({ taskId, toStatus, changedBy: session.user.id });
 
   revalidatePath("/site");
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
+
+  if (toStatus === "completed") {
+    const recipients = await listOfficeAndOwnerStaffIds();
+    await notifyManyStaff(recipients, {
+      title: "Task awaiting approval",
+      body: task.title,
+      url: "/tasks",
+    });
+  }
 }
 
 export type SubmitProofState =
@@ -88,6 +99,9 @@ export async function addOwnTaskCommentAction(formData: FormData) {
 
   revalidatePath("/site");
   revalidatePath("/tasks");
+
+  const recipients = await listOfficeAndOwnerStaffIds();
+  await notifyManyStaff(recipients, { title: "New comment", body: message, url: "/tasks" });
 }
 
 export async function raiseQueryAction(formData: FormData) {
@@ -102,8 +116,13 @@ export async function raiseQueryAction(formData: FormData) {
     siteId: session.user.siteId || undefined,
     taskId: String(formData.get("taskId") ?? "") || undefined,
     message,
+    gpsLat: String(formData.get("gpsLat") ?? ""),
+    gpsLng: String(formData.get("gpsLng") ?? ""),
   });
 
   revalidatePath("/site");
   revalidatePath("/queries");
+
+  const recipients = await listOfficeAndOwnerStaffIds();
+  await notifyManyStaff(recipients, { title: "New query raised", body: message, url: "/queries" });
 }

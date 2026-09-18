@@ -8,8 +8,9 @@ import { listTasksForAssignee } from "@/lib/data/tasks";
 import { getSite } from "@/lib/data/sites";
 import { listAllTaskComments } from "@/lib/data/task-comments";
 import { listQueriesRaisedBy } from "@/lib/data/queries";
-import { updateOwnTaskStatusAction, addOwnTaskCommentAction, raiseQueryAction } from "@/app/site/actions";
+import { updateOwnTaskStatusAction, addOwnTaskCommentAction } from "@/app/site/actions";
 import { ProofForm } from "@/app/site/proof-form";
+import { RaiseQueryForm } from "@/app/site/raise-query-form";
 import type { TaskStatus } from "@/lib/data/types";
 
 const TABS: { key: TaskStatus; label: string }[] = [
@@ -172,15 +173,7 @@ export default async function SiteStaffPage({
           <h2 className="text-base font-semibold text-slate-900">Raise a Query</h2>
           <p className="text-sm text-slate-500">Stuck on something, or facing a problem at site? Let the office know.</p>
         </div>
-        <form action={raiseQueryAction} className="flex flex-col gap-2 px-5 py-4 sm:flex-row">
-          <input
-            name="message"
-            required
-            placeholder="Describe the issue…"
-            className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-navy focus:outline-none"
-          />
-          <Button type="submit">Send</Button>
-        </form>
+        <RaiseQueryForm />
         {queries.length > 0 && (
           <div className="divide-y divide-slate-100 border-t border-slate-100">
             {queries.map((q) => (

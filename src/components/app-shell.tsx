@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { signOut } from "@/auth";
+import { NotificationsToggle } from "@/components/notifications-toggle";
+import { LiveRefresh } from "@/components/live-refresh";
 
 const ownerNav = [
   { href: "/dashboard", label: "Dashboard" },
@@ -26,7 +28,7 @@ export function AppShell({
       <header className="border-b border-slate-200 bg-brand-navy text-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-8">
-            <span className="text-sm font-semibold tracking-wide">Pride Group AI Platform</span>
+            <span className="text-sm font-semibold tracking-wide">Chai Labs Real Estate</span>
             <nav className="hidden gap-1 sm:flex">
               {nav.map((item) => (
                 <Link
@@ -40,6 +42,7 @@ export function AppShell({
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            <NotificationsToggle />
             <span className="hidden text-sm text-slate-300 sm:inline">
               {name} · <span className="text-brand-gold">{role.replace("_", " ")}</span>
             </span>
@@ -68,6 +71,7 @@ export function AppShell({
         </nav>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
+      <LiveRefresh />
     </div>
   );
 }

@@ -96,4 +96,6 @@ export interface Query {
   repliedBy: string;
   createdAt: string;
   repliedAt: string;
+  gpsLat: string;
+  gpsLng: string;
 }

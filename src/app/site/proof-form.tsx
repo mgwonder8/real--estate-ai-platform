@@ -1,29 +1,15 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { submitProofAction, type SubmitProofState } from "@/app/site/actions";
+import { useGeolocation } from "@/lib/use-geolocation";
 
 const initialState: SubmitProofState = { status: "idle" };
 
 export function ProofForm({ taskId }: { taskId: string }) {
   const [state, formAction, pending] = useActionState(submitProofAction, initialState);
-  const [locating, setLocating] = useState(() => typeof navigator !== "undefined" && !!navigator.geolocation);
-  const latRef = useRef<HTMLInputElement>(null);
-  const lngRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        if (latRef.current) latRef.current.value = String(pos.coords.latitude);
-        if (lngRef.current) lngRef.current.value = String(pos.coords.longitude);
-        setLocating(false);
-      },
-      () => setLocating(false),
-      { timeout: 8000 }
-    );
-  }, []);
+  const { locating, lat, lng, denied } = useGeolocation();
 
   if (state.status === "success") {
     return (
@@ -36,8 +22,8 @@ export function ProofForm({ taskId }: { taskId: string }) {
   return (
     <form action={formAction} className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
       <input type="hidden" name="taskId" value={taskId} />
-      <input ref={latRef} type="hidden" name="gpsLat" />
-      <input ref={lngRef} type="hidden" name="gpsLng" />
+      <input type="hidden" name="gpsLat" value={lat} />
+      <input type="hidden" name="gpsLng" value={lng} />
 
       <div>
         <label className="mb-1 block text-xs font-medium text-slate-600">Photo / video</label>
@@ -58,6 +44,7 @@ export function ProofForm({ taskId }: { taskId: string }) {
           className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-navy focus:outline-none"
         />
       </div>
+      {denied && <p className="text-xs text-amber-700">Location permission denied — proof will be submitted without GPS tagging.</p>}
       {state.status === "error" && <p className="text-xs text-red-600">{state.message}</p>}
       <Button type="submit" variant="secondary" disabled={pending} className="w-full">
         {pending ? (locating ? "Getting location…" : "Submitting…") : "Submit Proof"}
