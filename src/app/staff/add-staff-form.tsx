@@ -13,7 +13,7 @@ export function AddStaffForm({ sites }: { sites: Site[] }) {
   return (
     <div>
       {state.status === "success" && (
-        <div className="mx-5 mt-5 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-inset ring-emerald-200">
+        <div className="mb-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-inset ring-emerald-200">
           <p className="font-medium">{state.name} added.</p>
           <p>
             Login: <span className="font-mono">{state.email}</span> · Temp password:{" "}
@@ -23,11 +23,11 @@ export function AddStaffForm({ sites }: { sites: Site[] }) {
         </div>
       )}
       {state.status === "error" && (
-        <div className="mx-5 mt-5 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-200">
+        <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-200">
           {state.message}
         </div>
       )}
-      <form action={formAction} className="grid grid-cols-1 gap-4 px-5 py-5 sm:grid-cols-2">
+      <form action={formAction} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">Name</label>
           <input name="name" required className={inputClass} />

@@ -1,7 +1,9 @@
+import { ListChecks, CheckCircle2, TrendingUp, AlertTriangle } from "lucide-react";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardHeader } from "@/components/ui/card";
 import { PriorityPill } from "@/components/ui/status-pill";
+import { Avatar } from "@/components/ui/avatar";
 import { listTasks } from "@/lib/data/tasks";
 import { listSites } from "@/lib/data/sites";
 import { listStaff } from "@/lib/data/staff";
@@ -59,10 +61,10 @@ export default async function InsightsPage() {
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Total Tasks" value={totalTasks} />
-        <StatCard label="Approved" value={doneCount} />
-        <StatCard label="Completion Rate" value={`${completionRate}%`} />
-        <StatCard label="Overdue" value={overdueTasks.length} tone={overdueTasks.length > 0 ? "danger" : "default"} />
+        <StatCard label="Total Tasks" value={totalTasks} icon={ListChecks} />
+        <StatCard label="Approved" value={doneCount} icon={CheckCircle2} />
+        <StatCard label="Completion Rate" value={`${completionRate}%`} icon={TrendingUp} />
+        <StatCard label="Overdue" value={overdueTasks.length} tone={overdueTasks.length > 0 ? "danger" : "default"} icon={AlertTriangle} />
       </div>
 
       <Card className="mb-6">
@@ -83,13 +85,16 @@ export default async function InsightsPage() {
         <div className="divide-y divide-slate-100">
           {overdueTasks.length === 0 && <p className="px-5 py-6 text-center text-sm text-slate-500">Nothing overdue right now.</p>}
           {overdueTasks.map((t) => (
-            <div key={t.id} className="flex items-center justify-between px-5 py-3">
-              <div>
-                <p className="text-sm font-medium text-slate-900">{t.title}</p>
-                <p className="text-xs text-slate-500">
-                  {siteById[t.siteId]?.name ?? "Unknown site"} ·{" "}
-                  {t.assigneeIds.map((id) => staffById[id]?.name ?? "Unassigned").join(", ") || "Unassigned"} · Due {t.deadline}
-                </p>
+            <div key={t.id} className="flex items-center justify-between gap-3 px-5 py-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <Avatar name={staffById[t.assigneeIds[0]]?.name ?? "?"} size="sm" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-slate-900">{t.title}</p>
+                  <p className="truncate text-xs text-slate-500">
+                    {siteById[t.siteId]?.name ?? "Unknown site"} ·{" "}
+                    {t.assigneeIds.map((id) => staffById[id]?.name ?? "Unassigned").join(", ") || "Unassigned"} · Due {t.deadline}
+                  </p>
+                </div>
               </div>
               <PriorityPill priority={t.priority} />
             </div>
@@ -117,8 +122,11 @@ export default async function InsightsPage() {
           {perStaff.length === 0 && <p className="px-5 py-6 text-center text-sm text-slate-500">No site staff yet.</p>}
           {perStaff.map(({ person, total, approved, overdue, completionRate: rate }) => (
             <div key={person.id} className="px-5 py-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-slate-900">{person.name}</span>
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <div className="flex items-center gap-3">
+                  <Avatar name={person.name} />
+                  <span className="font-medium text-slate-900">{person.name}</span>
+                </div>
                 <span className="text-slate-500">
                   {total} tasks · {approved} approved · {rate}% completion
                   {overdue > 0 && <span className="ml-1 font-medium text-red-600">· {overdue} overdue</span>}
@@ -133,11 +141,27 @@ export default async function InsightsPage() {
   );
 }
 
-function StatCard({ label, value, tone = "default" }: { label: string; value: string | number; tone?: "default" | "danger" }) {
+function StatCard({
+  label,
+  value,
+  tone = "default",
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  tone?: "default" | "danger";
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+}) {
+  const danger = tone === "danger" && Number(value) > 0;
   return (
     <Card className="p-5">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className={`mt-1 text-3xl font-semibold ${tone === "danger" && Number(value) > 0 ? "text-red-600" : "text-slate-900"}`}>{value}</p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate-500">{label}</p>
+        <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${danger ? "bg-red-50 text-red-600" : "bg-slate-50 text-slate-500"}`}>
+          <Icon size={16} />
+        </span>
+      </div>
+      <p className={`mt-1 text-3xl font-semibold ${danger ? "text-red-600" : "text-slate-900"}`}>{value}</p>
     </Card>
   );
 }
