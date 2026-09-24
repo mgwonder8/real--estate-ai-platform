@@ -6,7 +6,7 @@ import { createTask, updateTaskStatus, approveTask, requestTaskChanges, getTask 
 import { addTaskComment } from "@/lib/data/task-comments";
 import { saveProofFile } from "@/lib/storage/upload";
 import { listOfficeAndOwnerStaffIds } from "@/lib/data/staff";
-import { notifyStaff, notifyManyStaff } from "@/lib/push/send";
+import { notifyManyStaff } from "@/lib/push/send";
 import type { TaskPriority, TaskStatus } from "@/lib/data/types";
 
 function revalidateTaskPaths() {
@@ -31,13 +31,14 @@ export async function createTaskAction(formData: FormData) {
   }
 
   const title = String(formData.get("title") ?? "");
-  const assigneeId = String(formData.get("assigneeId") ?? "");
+  const assigneeIds = formData.getAll("assigneeIds").map(String).filter(Boolean);
+  if (assigneeIds.length === 0) throw new Error("Select at least one staff member to assign this task to");
 
   await createTask({
     title,
     brief: String(formData.get("brief") ?? ""),
     siteId: String(formData.get("siteId") ?? ""),
-    assigneeId,
+    assigneeIds,
     createdBy: session.user.id,
     priority: (String(formData.get("priority") ?? "normal") as TaskPriority),
     deadline: String(formData.get("deadline") ?? ""),
@@ -49,7 +50,7 @@ export async function createTaskAction(formData: FormData) {
 
   revalidateTaskPaths();
 
-  await notifyStaff(assigneeId, {
+  await notifyManyStaff(assigneeIds, {
     title: "New task assigned",
     body: title,
     url: "/site",
@@ -97,7 +98,7 @@ export async function approveTaskAction(formData: FormData) {
 
   const task = await getTask(taskId);
   if (task) {
-    await notifyStaff(task.assigneeId, {
+    await notifyManyStaff(task.assigneeIds, {
       title: "Task approved",
       body: task.title,
       url: "/site",
@@ -125,7 +126,7 @@ export async function requestTaskChangesAction(formData: FormData) {
 
   const task = await getTask(taskId);
   if (task) {
-    await notifyStaff(task.assigneeId, {
+    await notifyManyStaff(task.assigneeIds, {
       title: "Changes requested on your task",
       body: task.title,
       url: "/site",
@@ -158,7 +159,7 @@ export async function addTaskCommentAction(formData: FormData) {
       const recipients = await listOfficeAndOwnerStaffIds();
       await notifyManyStaff(recipients, { title: "New comment", body: message, url: "/tasks" });
     } else {
-      await notifyStaff(task.assigneeId, { title: "New comment on your task", body: message, url: "/site" });
+      await notifyManyStaff(task.assigneeIds, { title: "New comment on your task", body: message, url: "/site" });
     }
   }
 }

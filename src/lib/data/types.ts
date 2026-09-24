@@ -31,7 +31,7 @@ export interface Task {
   title: string;
   brief: string;
   siteId: string;
-  assigneeId: string;
+  assigneeIds: string[];
   createdBy: string;
   priority: TaskPriority;
   deadline: string;

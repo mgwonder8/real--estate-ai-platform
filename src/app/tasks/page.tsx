@@ -11,6 +11,7 @@ import { listAllTaskComments } from "@/lib/data/task-comments";
 import { createTaskAction, updateTaskStatusAction } from "@/app/tasks/actions";
 import { TaskReviewForm } from "@/app/tasks/task-review-form";
 import { CommentThread } from "@/app/tasks/comment-thread";
+import { AssigneeCheckboxes } from "@/components/assignee-checkboxes";
 import type { TaskStatus } from "@/lib/data/types";
 
 export default async function TasksPage() {
@@ -75,13 +76,8 @@ export default async function TasksPage() {
               ))}
             </select>
           </Field>
-          <Field label="Assign to">
-            <select name="assigneeId" required className={inputClass}>
-              <option value="">Select staff</option>
-              {assignableStaff.map((s) => (
-                <option key={s.id} value={s.id}>{s.name} ({s.role.replace("_", " ")})</option>
-              ))}
-            </select>
+          <Field label="Assign to (select one or more)" className="sm:col-span-2">
+            <AssigneeCheckboxes staff={assignableStaff} />
           </Field>
           <Field label="Priority">
             <select name="priority" defaultValue="normal" className={inputClass}>
@@ -117,7 +113,7 @@ export default async function TasksPage() {
           )}
           {tasks.map((task) => {
             const site = siteById[task.siteId];
-            const assignee = staffById[task.assigneeId];
+            const assigneeNames = task.assigneeIds.map((id) => staffById[id]?.name ?? "Unknown").join(", ");
             const upcoming = nextStatus[task.status];
             const taskProofs = proofsByTask.get(task.id) ?? [];
             const taskComments = commentsByTask.get(task.id) ?? [];
@@ -131,7 +127,7 @@ export default async function TasksPage() {
                       <StatusPill status={task.status} />
                     </div>
                     <p className="mt-0.5 text-sm text-slate-500">
-                      {site?.name ?? "Unknown site"} · {assignee?.name ?? "Unassigned"}
+                      {site?.name ?? "Unknown site"} · {assigneeNames || "Unassigned"}
                       {task.deadline && ` · Due ${task.deadline}`}
                     </p>
                     {(task.resourceLink || task.resourceFileUrl) && (

@@ -20,7 +20,7 @@ export interface ParsedTaskDraft {
   title: string;
   brief: string;
   siteId: string | null;
-  assigneeId: string | null;
+  assigneeIds: string[];
   priority: "low" | "normal" | "urgent";
   deadline: string | null;
   proofRequired: boolean;
@@ -42,14 +42,18 @@ export async function parseTaskFromChat(input: {
       title: { type: "string", description: "Short task title, max 10 words" },
       brief: { type: "string", description: "Fuller instructions/details for whoever does the work" },
       siteId: { type: ["string", "null"], description: "Best-matching site id from the provided list, or null if unclear" },
-      assigneeId: { type: ["string", "null"], description: "Best-matching staff id from the provided list, or null if unclear" },
+      assigneeIds: {
+        type: "array",
+        items: { type: "string" },
+        description: "Ids of every staff member this task should be assigned to, matched from the provided list. Empty array if unclear.",
+      },
       priority: { type: "string", enum: ["low", "normal", "urgent"] },
       deadline: { type: ["string", "null"], description: "ISO date YYYY-MM-DD if a deadline is implied, else null" },
       proofRequired: { type: "boolean", description: "Whether photo/video proof of completion should be required" },
       confidence: { type: "string", enum: ["high", "medium", "low"], description: "Your confidence in the site/assignee match" },
       notes: { type: "string", description: "Anything the owner should double-check before this task is created, empty string if none" },
     },
-    required: ["title", "brief", "siteId", "assigneeId", "priority", "deadline", "proofRequired", "confidence", "notes"],
+    required: ["title", "brief", "siteId", "assigneeIds", "priority", "deadline", "proofRequired", "confidence", "notes"],
     additionalProperties: false,
   };
 
@@ -60,8 +64,10 @@ export async function parseTaskFromChat(input: {
         role: "system",
         content:
           "You turn a real estate site owner's short instruction into a structured task assignment. " +
-          "Match the site and assignee to the closest entry in the provided lists by name — be forgiving of typos, " +
-          "abbreviations, and partial names. If a staff member is tied to a specific site, prefer them for tasks at that site. " +
+          "Match the site and assignee(s) to the closest entries in the provided lists by name — be forgiving of typos, " +
+          "abbreviations, and partial names. A task can be assigned to more than one staff member if the instruction " +
+          "implies it (e.g. names multiple people, or says 'the team' at a site — in that case include everyone tied to that site). " +
+          "If a staff member is tied to a specific site, prefer them for tasks at that site. " +
           "Default priority is 'normal' and proofRequired is true unless the instruction clearly implies otherwise. " +
           "If today's date matters, assume it is " + new Date().toISOString().slice(0, 10) + ".",
       },

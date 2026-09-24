@@ -21,7 +21,7 @@ export async function generateStaffSummaryAction(_prev: AiTextState, formData: F
     const person = staff.find((s) => s.id === staffId);
     if (!person) return { status: "error", message: "Staff member not found" };
 
-    const theirTasks = tasks.filter((t) => t.assigneeId === staffId);
+    const theirTasks = tasks.filter((t) => t.assigneeIds.includes(staffId));
     const completedAtByTask = new Map<string, string>();
     for (const u of updates) {
       if (u.toStatus === "completed") completedAtByTask.set(u.taskId, u.changedAt);
@@ -76,7 +76,7 @@ export async function generatePortfolioInsightsAction(_prev: AiTextState, _formD
       .map((t) => ({
         title: t.title,
         site: siteById[t.siteId]?.name ?? "Unknown",
-        assignee: staffById[t.assigneeId]?.name ?? "Unassigned",
+        assignee: t.assigneeIds.map((id) => staffById[id]?.name ?? "Unassigned").join(", ") || "Unassigned",
         deadline: t.deadline,
         priority: t.priority,
       }));

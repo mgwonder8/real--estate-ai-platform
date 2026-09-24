@@ -39,7 +39,7 @@ export default async function InsightsPage() {
 
   const siteStaffOnly = staff.filter((s) => s.role === "site_staff");
   const perStaff = siteStaffOnly.map((person) => {
-    const theirs = tasks.filter((t) => t.assigneeId === person.id);
+    const theirs = tasks.filter((t) => t.assigneeIds.includes(person.id));
     const approved = theirs.filter((t) => t.status === "approved").length;
     const overdue = theirs.filter(isOverdue).length;
     return {
@@ -87,7 +87,8 @@ export default async function InsightsPage() {
               <div>
                 <p className="text-sm font-medium text-slate-900">{t.title}</p>
                 <p className="text-xs text-slate-500">
-                  {siteById[t.siteId]?.name ?? "Unknown site"} · {staffById[t.assigneeId]?.name ?? "Unassigned"} · Due {t.deadline}
+                  {siteById[t.siteId]?.name ?? "Unknown site"} ·{" "}
+                  {t.assigneeIds.map((id) => staffById[id]?.name ?? "Unassigned").join(", ") || "Unassigned"} · Due {t.deadline}
                 </p>
               </div>
               <PriorityPill priority={t.priority} />

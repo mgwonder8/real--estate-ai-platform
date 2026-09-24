@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { VoiceInputButton } from "@/components/voice-input-button";
+import { AssigneeCheckboxes } from "@/components/assignee-checkboxes";
 import { parseTaskChatAction, type ChatParseState } from "@/app/dashboard/actions";
 import { createTaskAction } from "@/app/tasks/actions";
 import type { Site, Staff } from "@/lib/data/types";
@@ -87,14 +88,9 @@ export function AiTaskChat({ sites, staff }: { sites: Site[]; staff: Staff[] }) 
                 ))}
               </select>
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <label className="mb-1 block text-xs font-medium text-slate-700">Assign to</label>
-              <select name="assigneeId" defaultValue={state.draft.assigneeId ?? ""} required className={inputClass}>
-                <option value="">Select staff</option>
-                {staff.filter((s) => s.active).map((s) => (
-                  <option key={s.id} value={s.id}>{s.name} ({s.role.replace("_", " ")})</option>
-                ))}
-              </select>
+              <AssigneeCheckboxes staff={staff.filter((s) => s.active)} defaultSelected={state.draft.assigneeIds} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">Priority</label>

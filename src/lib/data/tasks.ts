@@ -12,7 +12,7 @@ function toTask(data: Record<string, string>): Task {
     title: data.title,
     brief: data.brief,
     siteId: data.site_id,
-    assigneeId: data.assignee_id,
+    assigneeIds: (data.assignee_id ?? "").split(",").map((s) => s.trim()).filter(Boolean),
     createdBy: data.created_by,
     priority: (data.priority as TaskPriority) || "normal",
     deadline: data.deadline,
@@ -40,7 +40,7 @@ export async function getTask(id: string): Promise<Task | null> {
 
 export async function listTasksForAssignee(assigneeId: string): Promise<Task[]> {
   const all = await listTasks();
-  return all.filter((t) => t.assigneeId === assigneeId);
+  return all.filter((t) => t.assigneeIds.includes(assigneeId));
 }
 
 export async function listTasksForSite(siteId: string): Promise<Task[]> {
@@ -52,7 +52,7 @@ export async function createTask(input: {
   title: string;
   brief: string;
   siteId: string;
-  assigneeId: string;
+  assigneeIds: string[];
   createdBy: string;
   priority: TaskPriority;
   deadline: string;
@@ -67,7 +67,7 @@ export async function createTask(input: {
     title: input.title,
     brief: input.brief,
     siteId: input.siteId,
-    assigneeId: input.assigneeId,
+    assigneeIds: input.assigneeIds.filter(Boolean),
     createdBy: input.createdBy,
     priority: input.priority,
     deadline: input.deadline,
@@ -86,7 +86,7 @@ export async function createTask(input: {
     title: task.title,
     brief: task.brief,
     site_id: task.siteId,
-    assignee_id: task.assigneeId,
+    assignee_id: task.assigneeIds.join(","),
     created_by: task.createdBy,
     priority: task.priority,
     deadline: task.deadline,

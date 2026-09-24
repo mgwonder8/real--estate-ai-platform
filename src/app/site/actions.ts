@@ -15,7 +15,7 @@ async function requireOwnTask(taskId: string) {
   const session = await auth();
   if (!session?.user) throw new Error("Not authenticated");
   const task = await getTask(taskId);
-  if (!task || task.assigneeId !== session.user.id) {
+  if (!task || !task.assigneeIds.includes(session.user.id)) {
     throw new Error("Task not found or not assigned to you");
   }
   return { session, task };

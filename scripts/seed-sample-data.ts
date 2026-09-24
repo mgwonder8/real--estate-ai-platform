@@ -157,7 +157,7 @@ async function main() {
     title: string;
     brief: string;
     siteId: string;
-    assigneeId: string;
+    assigneeIds: string[];
     priority: TaskPriority;
     deadline: string;
     resourceLink?: string;
@@ -179,7 +179,7 @@ async function main() {
     title: "Verify EV charging point installation — Tower B",
     brief: "Confirm all EV charging points on Tower B parking level are wired and tested per the electrical plan.",
     siteId: oneWorld.id,
-    assigneeId: oneWorldStaff1.id,
+    assigneeIds: [oneWorldStaff1.id],
     priority: "normal",
     deadline: futureDate(5),
   });
@@ -187,7 +187,7 @@ async function main() {
     title: "Inspect eco-jungle treehouse structural safety",
     brief: "Full structural safety check on the treehouse structures in the indigenous eco-jungle before it opens to residents.",
     siteId: oneWorld.id,
-    assigneeId: oneWorldStaff1.id,
+    assigneeIds: [oneWorldStaff1.id],
     priority: "urgent",
     deadline: futureDate(2),
     resourceLink: "https://manjeetpridegroup.com/one_world",
@@ -198,7 +198,7 @@ async function main() {
     title: "Check infinity-edge pool tiling and seal",
     brief: "Inspect tiling and edge sealing on the infinity-edge pool ahead of water testing.",
     siteId: dreamWorld.id,
-    assigneeId: dreamWorldStaff1.id,
+    assigneeIds: [dreamWorldStaff1.id],
     priority: "urgent",
     deadline: pastDate(1),
   });
@@ -206,7 +206,7 @@ async function main() {
     title: "Confirm co-working space furniture delivery",
     brief: "Verify furniture delivery and setup for the residents' co-working space matches the vendor order.",
     siteId: dreamWorld.id,
-    assigneeId: dreamWorldStaff1.id,
+    assigneeIds: [dreamWorldStaff1.id],
     priority: "normal",
     deadline: futureDate(7),
   });
@@ -216,7 +216,7 @@ async function main() {
     title: "Test LED dancing fountain electrical & water sync",
     brief: "Run a full test cycle on the LED dancing fountain — check electrical timing sync against the water jets.",
     siteId: landmark.id,
-    assigneeId: landmarkStaff1.id,
+    assigneeIds: [landmarkStaff1.id],
     priority: "normal",
     deadline: futureDate(10),
   });
@@ -224,7 +224,7 @@ async function main() {
     title: "CCTV camera installation audit — main gate",
     brief: "Audit CCTV camera coverage and recording status at the main gated-community entrance.",
     siteId: landmark.id,
-    assigneeId: landmarkStaff1.id,
+    assigneeIds: [landmarkStaff1.id],
     priority: "urgent",
     deadline: futureDate(3),
     resourceLink: "https://manjeetpridegroup.com/manjeet_pride_landmark",
@@ -235,7 +235,7 @@ async function main() {
     title: "Annual STP maintenance check",
     brief: "Scheduled annual maintenance and inspection of the 630 KLD Sewage Treatment Plant.",
     siteId: myWorldVxl.id,
-    assigneeId: vxlStaff1.id,
+    assigneeIds: [vxlStaff1.id],
     priority: "urgent",
     deadline: futureDate(4),
   });
