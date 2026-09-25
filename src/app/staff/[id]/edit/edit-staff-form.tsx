@@ -1,14 +1,14 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, inputClass } from "@/components/ui/field";
-import { createStaffAction, type CreateStaffState } from "@/app/staff/actions";
-import type { Role, Site } from "@/lib/data/types";
+import { updateStaffAction, type UpdateStaffState } from "@/app/staff/actions";
+import type { Role, Site, Staff } from "@/lib/data/types";
 
-const initialState: CreateStaffState = { status: "idle" };
+const initialState: UpdateStaffState = { status: "idle" };
 
 const ROLES: { value: Role; label: string }[] = [
   { value: "site_staff", label: "Site staff" },
@@ -16,31 +16,24 @@ const ROLES: { value: Role; label: string }[] = [
   { value: "owner", label: "Owner" },
 ];
 
-export function AddStaffForm({ sites }: { sites: Site[] }) {
-  const [state, formAction, pending] = useActionState(createStaffAction, initialState);
-  const [role, setRole] = useState<Role>("site_staff");
-  const [primarySiteId, setPrimarySiteId] = useState("");
-  const [extraSiteIds, setExtraSiteIds] = useState<string[]>([]);
+export function EditStaffForm({ staff, sites }: { staff: Staff; sites: Site[] }) {
+  const [state, formAction, pending] = useActionState(updateStaffAction, initialState);
+  const [role, setRole] = useState<Role>(staff.role);
+  const [primarySiteId, setPrimarySiteId] = useState(staff.siteId);
+  const [extraSiteIds, setExtraSiteIds] = useState<string[]>(staff.extraSiteIds);
+  const router = useRouter();
 
   if (state.status === "success") {
     return (
-      <div className="text-center">
+      <div className="text-center py-8">
         <CheckCircle2 size={40} className="mx-auto text-emerald-500" />
-        <p className="mt-3 text-lg font-semibold text-slate-900">{state.name} is added</p>
-        <div className="mx-auto mt-4 max-w-sm space-y-2 rounded-xl bg-slate-50 p-4 text-left text-sm">
-          <p className="flex justify-between gap-3">
-            <span className="text-slate-500">Login</span>
-            <span className="truncate font-mono text-slate-900">{state.email}</span>
-          </p>
-          <p className="flex justify-between gap-3">
-            <span className="text-slate-500">Password</span>
-            <span className="font-mono font-semibold text-slate-900">{state.tempPassword}</span>
-          </p>
-        </div>
-        <p className="mt-3 text-xs text-slate-500">Share these now. The password is shown only once.</p>
-        <Link href="/staff" className="mt-5 inline-block text-sm font-medium text-brand-navy hover:underline">
+        <p className="mt-3 text-lg font-semibold text-slate-900">Changes saved</p>
+        <button
+          onClick={() => router.push("/staff")}
+          className="mt-5 text-sm font-medium text-brand-navy hover:underline"
+        >
           Back to team
-        </Link>
+        </button>
       </div>
     );
   }
@@ -56,8 +49,12 @@ export function AddStaffForm({ sites }: { sites: Site[] }) {
   return (
     <form action={formAction} className="space-y-5">
       {state.status === "error" && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-100">{state.message}</p>
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-inset ring-red-100">
+          {state.message}
+        </p>
       )}
+
+      <input type="hidden" name="id" value={staff.id} />
       <input type="hidden" name="role" value={role} />
       <input type="hidden" name="siteId" value={primarySiteId} />
       {extraSiteIds.map((id) => (
@@ -84,13 +81,10 @@ export function AddStaffForm({ sites }: { sites: Site[] }) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Name">
-          <input name="name" required autoFocus className={inputClass} />
+          <input name="name" required defaultValue={staff.name} className={inputClass} />
         </Field>
         <Field label="Phone" hint="Optional">
-          <input name="phone" type="tel" className={inputClass} />
-        </Field>
-        <Field label="Email" className="sm:col-span-2">
-          <input name="email" type="email" required className={inputClass} placeholder="Used to sign in" />
+          <input name="phone" type="tel" defaultValue={staff.phone} className={inputClass} />
         </Field>
       </div>
 
@@ -106,7 +100,7 @@ export function AddStaffForm({ sites }: { sites: Site[] }) {
               }}
               className={inputClass}
             >
-              <option value="">Choose a site</option>
+              <option value="">No site</option>
               {sites.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -145,10 +139,17 @@ export function AddStaffForm({ sites }: { sites: Site[] }) {
         </>
       )}
 
-      <div className="flex justify-end pt-2">
+      <div className="flex items-center justify-end gap-3 pt-2">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="text-sm text-slate-500 hover:text-slate-700"
+        >
+          Cancel
+        </button>
         <Button type="submit" disabled={pending} className="min-w-32">
           {pending && <Loader2 size={16} className="animate-spin" />}
-          Add person
+          Save changes
         </Button>
       </div>
     </form>

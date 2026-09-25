@@ -20,6 +20,7 @@ export interface Staff {
   name: string;
   role: Role;
   siteId: string;
+  extraSiteIds: string[];
   phone: string;
   email: string;
   active: boolean;

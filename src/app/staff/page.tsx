@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, MapPin, Phone, Plus, Users } from "lucide-react";
+import { Mail, MapPin, Pencil, Phone, Plus, Users } from "lucide-react";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/app-shell";
 import { Card, EmptyState } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { ButtonLink } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { MeterBar } from "@/components/ui/progress";
-import { listStaff } from "@/lib/data/staff";
+import { listStaff, allSiteIds } from "@/lib/data/staff";
 import { listSites } from "@/lib/data/sites";
 import { listTasks } from "@/lib/data/tasks";
 import { isOpen, isOverdue } from "@/lib/task-meta";
@@ -59,14 +59,21 @@ export default async function StaffPage() {
                     <p className="truncate text-base font-semibold text-slate-900">{s.name}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${ROLE_TONE[s.role]}`}>{ROLE_LABEL[s.role]}</span>
-                      {siteById[s.siteId] && (
-                        <span className="inline-flex items-center gap-1 text-xs text-slate-500">
-                          <MapPin size={11} /> {siteById[s.siteId].name}
+                      {allSiteIds(s).map((sid) => siteById[sid] && (
+                        <span key={sid} className="inline-flex items-center gap-1 text-xs text-slate-500">
+                          <MapPin size={11} /> {siteById[sid].name}
                         </span>
-                      )}
+                      ))}
                       {!s.active && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">Inactive</span>}
                     </div>
                   </div>
+                  <Link
+                    href={`/staff/${s.id}/edit`}
+                    className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    title="Edit"
+                  >
+                    <Pencil size={15} />
+                  </Link>
                 </div>
 
                 <div className="mt-4 space-y-1 text-xs text-slate-500">

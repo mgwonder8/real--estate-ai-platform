@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { randomInt } from "crypto";
-import { createStaff, setStaffActive } from "@/lib/data/staff";
+import { createStaff, updateStaff, setStaffActive } from "@/lib/data/staff";
 import { createUser } from "@/lib/data/users";
 import type { Role } from "@/lib/data/types";
 
@@ -10,6 +10,11 @@ export type CreateStaffState =
   | { status: "idle" }
   | { status: "error"; message: string }
   | { status: "success"; name: string; email: string; tempPassword: string };
+
+export type UpdateStaffState =
+  | { status: "idle" }
+  | { status: "error"; message: string }
+  | { status: "success" };
 
 function generateTempPassword(): string {
   return String(randomInt(100000, 999999));
@@ -23,13 +28,14 @@ export async function createStaffAction(
   const email = String(formData.get("email") ?? "").trim();
   const role = String(formData.get("role") ?? "site_staff") as Role;
   const siteId = String(formData.get("siteId") ?? "");
+  const extraSiteIds = formData.getAll("extraSiteIds").map(String).filter(Boolean);
   const phone = String(formData.get("phone") ?? "");
 
   if (!name || !email) {
     return { status: "error", message: "Name and email are required." };
   }
 
-  const staff = await createStaff({ name, role, siteId, phone, email });
+  const staff = await createStaff({ name, role, siteId, extraSiteIds, phone, email });
   const tempPassword = generateTempPassword();
   await createUser({ email, password: tempPassword, staffId: staff.id });
 
@@ -38,6 +44,31 @@ export async function createStaffAction(
   revalidatePath("/dashboard");
 
   return { status: "success", name, email, tempPassword };
+}
+
+export async function updateStaffAction(
+  _prev: UpdateStaffState,
+  formData: FormData
+): Promise<UpdateStaffState> {
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const role = String(formData.get("role") ?? "site_staff") as Role;
+  const siteId = String(formData.get("siteId") ?? "");
+  const extraSiteIds = formData.getAll("extraSiteIds").map(String).filter(Boolean);
+  const phone = String(formData.get("phone") ?? "");
+
+  if (!id || !name) {
+    return { status: "error", message: "Name is required." };
+  }
+
+  await updateStaff(id, { name, role, siteId, extraSiteIds, phone });
+
+  revalidatePath("/staff");
+  revalidatePath("/tasks");
+  revalidatePath("/dashboard");
+  revalidatePath(`/staff/${id}/edit`);
+
+  return { status: "success" };
 }
 
 export async function toggleStaffActiveAction(formData: FormData) {

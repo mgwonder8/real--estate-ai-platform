@@ -18,9 +18,10 @@ export function AssigneePicker({
   onChange: (ids: string[]) => void;
 }) {
   const siteById = Object.fromEntries(sites.map((s) => [s.id, s]));
+  function staffSiteIds(s: Staff) { return [s.siteId, ...s.extraSiteIds].filter(Boolean); }
   const ordered = [...staff].sort((a, b) => {
-    const am = siteId && a.siteId === siteId ? 0 : 1;
-    const bm = siteId && b.siteId === siteId ? 0 : 1;
+    const am = siteId && staffSiteIds(a).includes(siteId) ? 0 : 1;
+    const bm = siteId && staffSiteIds(b).includes(siteId) ? 0 : 1;
     return am - bm || a.name.localeCompare(b.name);
   });
 
@@ -37,8 +38,9 @@ export function AssigneePicker({
       ))}
       {ordered.map((s) => {
         const on = selected.includes(s.id);
-        const atSite = !!siteId && s.siteId === siteId;
-        const sub = s.role === "office_staff" ? "Office" : siteById[s.siteId]?.name;
+        const atSite = !!siteId && staffSiteIds(s).includes(siteId);
+        const siteNames = staffSiteIds(s).map((id) => siteById[id]?.name).filter(Boolean);
+        const sub = s.role === "office_staff" ? "Office" : siteNames.join(", ");
         return (
           <button
             key={s.id}
