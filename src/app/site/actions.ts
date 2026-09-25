@@ -29,7 +29,8 @@ export async function updateOwnTaskStatusAction(formData: FormData) {
   await updateTaskStatus({ taskId, toStatus, changedBy: session.user.id });
 
   revalidatePath("/site");
-  revalidatePath("/tasks");
+  revalidatePath("/tasks", "layout");
+  revalidatePath("/sites", "layout");
   revalidatePath("/dashboard");
 
   if (toStatus === "completed") {
@@ -37,7 +38,7 @@ export async function updateOwnTaskStatusAction(formData: FormData) {
     await notifyManyStaff(recipients, {
       title: "Task awaiting approval",
       body: task.title,
-      url: "/tasks",
+      url: `/tasks/${taskId}`,
     });
   }
 }
@@ -77,7 +78,8 @@ export async function submitProofAction(
     });
 
     revalidatePath("/site");
-    revalidatePath("/tasks");
+    revalidatePath("/tasks", "layout");
+    revalidatePath("/sites", "layout");
     return { status: "success" };
   } catch (err) {
     return { status: "error", message: err instanceof Error ? err.message : "Failed to submit proof" };
@@ -98,10 +100,11 @@ export async function addOwnTaskCommentAction(formData: FormData) {
   });
 
   revalidatePath("/site");
-  revalidatePath("/tasks");
+  revalidatePath("/tasks", "layout");
+  revalidatePath("/sites", "layout");
 
   const recipients = await listOfficeAndOwnerStaffIds();
-  await notifyManyStaff(recipients, { title: "New comment", body: message, url: "/tasks" });
+  await notifyManyStaff(recipients, { title: "New comment", body: message, url: `/tasks/${taskId}` });
 }
 
 export async function raiseQueryAction(formData: FormData) {

@@ -22,6 +22,8 @@ export async function replyToQueryAction(formData: FormData) {
   });
 
   revalidatePath("/queries");
+  revalidatePath("/sites", "layout");
+  revalidatePath("/dashboard");
   revalidatePath("/site");
 
   if (existing) {

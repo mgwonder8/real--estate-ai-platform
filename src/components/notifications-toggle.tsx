@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Bell, BellOff, BellRing } from "lucide-react";
 
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -74,20 +75,28 @@ export function NotificationsToggle() {
 
   if (status === "unsupported" || status === "loading") return null;
 
+  const base = "flex h-9 w-9 items-center justify-center rounded-xl transition";
+
   if (status === "on") {
-    return <span className="text-xs text-slate-300">🔔 Notifications on</span>;
+    return (
+      <span title="Notifications on" className={`${base} text-brand-navy`}>
+        <BellRing size={18} />
+      </span>
+    );
   }
 
   if (status === "denied") {
-    return <span className="text-xs text-slate-400">Notifications blocked</span>;
+    return (
+      <span title="Notifications blocked in browser settings" className={`${base} text-slate-300`}>
+        <BellOff size={18} />
+      </span>
+    );
   }
 
   return (
-    <button
-      onClick={enable}
-      className="rounded-md bg-white/10 px-2.5 py-1 text-xs font-medium text-white hover:bg-white/20 cursor-pointer"
-    >
-      🔔 Enable notifications
+    <button onClick={enable} title="Turn on notifications" className={`${base} relative cursor-pointer text-slate-500 hover:bg-white`}>
+      <Bell size={18} />
+      <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-gold ring-2 ring-background" />
     </button>
   );
 }

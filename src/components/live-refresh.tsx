@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 /**
  * Polls the current route for fresh server-rendered data while the tab is
  * visible. This is a pragmatic stand-in for true real-time (websockets)
- * updates — Vercel's serverless functions don't hold persistent connections,
+ * updates, Vercel's serverless functions don't hold persistent connections,
  * and this needs no extra infrastructure or paid service.
  */
 export function LiveRefresh({ intervalMs = 20000 }: { intervalMs?: number }) {

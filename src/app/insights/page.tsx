@@ -1,249 +1,181 @@
 import Link from "next/link";
-import { ListChecks, CheckCircle2, TrendingUp, AlertTriangle, Sparkles } from "lucide-react";
+import { CircleAlert, Sparkles, Trophy } from "lucide-react";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardHeader } from "@/components/ui/card";
-import { PriorityPill } from "@/components/ui/status-pill";
 import { Avatar } from "@/components/ui/avatar";
+import { PageHeader } from "@/components/ui/page-header";
+import { MeterBar, ProgressRing, StatusBar } from "@/components/ui/progress";
+import { DueBadge } from "@/components/ui/status-pill";
 import { listTasks } from "@/lib/data/tasks";
 import { listSites } from "@/lib/data/sites";
 import { listStaff } from "@/lib/data/staff";
 import { isAiEnabled } from "@/lib/ai/openai";
+import { STATUS_META, STATUS_ORDER, isOverdue, sortByUrgency, statusCounts, firstName } from "@/lib/task-meta";
 import { PortfolioInsightsPanel } from "@/app/insights/portfolio-insights-button";
 import { StaffSummaryButton } from "@/app/insights/staff-summary-button";
-
-function isOverdue(task: { deadline: string; status: string }): boolean {
-  if (!task.deadline) return false;
-  if (task.status === "completed" || task.status === "approved") return false;
-  return new Date(task.deadline).getTime() < Date.now();
-}
 
 export default async function InsightsPage() {
   const session = await auth();
   const [tasks, sites, staff] = await Promise.all([listTasks(), listSites(), listStaff()]);
-
   const siteById = Object.fromEntries(sites.map((s) => [s.id, s]));
   const staffById = Object.fromEntries(staff.map((s) => [s.id, s]));
 
-  const totalTasks = tasks.length;
-  const doneCount = tasks.filter((t) => t.status === "approved").length;
-  const completionRate = totalTasks > 0 ? Math.round((doneCount / totalTasks) * 100) : 0;
-  const overdueTasks = tasks.filter(isOverdue).sort((a, b) => a.deadline.localeCompare(b.deadline));
+  const counts = statusCounts(tasks);
+  const total = tasks.length;
+  const rate = total ? Math.round((counts.approved / total) * 100) : 0;
+  const late = sortByUrgency(tasks.filter(isOverdue));
 
   const perSite = sites
     .map((site) => {
-      const siteTasks = tasks.filter((t) => t.siteId === site.id);
-      return {
-        site,
-        total: siteTasks.length,
-        overdue: siteTasks.filter(isOverdue).length,
-        approved: siteTasks.filter((t) => t.status === "approved").length,
-        awaiting: siteTasks.filter((t) => t.status === "completed").length,
-      };
+      const list = tasks.filter((t) => t.siteId === site.id);
+      const c = statusCounts(list);
+      return { site, total: list.length, counts: c, late: list.filter(isOverdue).length, rate: list.length ? Math.round((c.approved / list.length) * 100) : 0 };
     })
-    .sort((a, b) => b.overdue - a.overdue);
+    .sort((a, b) => b.late - a.late || a.rate - b.rate);
 
-  const siteStaffOnly = staff.filter((s) => s.role === "site_staff");
-  const perStaff = siteStaffOnly
+  const perStaff = staff
+    .filter((s) => s.role !== "owner")
     .map((person) => {
-      const theirs = tasks.filter((t) => t.assigneeIds.includes(person.id));
-      const approved = theirs.filter((t) => t.status === "approved").length;
-      const overdue = theirs.filter(isOverdue).length;
-      return {
-        person,
-        total: theirs.length,
-        approved,
-        overdue,
-        completionRate: theirs.length > 0 ? Math.round((approved / theirs.length) * 100) : 0,
-      };
+      const mine = tasks.filter((t) => t.assigneeIds.includes(person.id));
+      const done = mine.filter((t) => t.status === "approved").length;
+      return { person, total: mine.length, done, late: mine.filter(isOverdue).length, rate: mine.length ? Math.round((done / mine.length) * 100) : 0 };
     })
-    .sort((a, b) => b.completionRate - a.completionRate);
+    .filter((p) => p.total > 0)
+    .sort((a, b) => b.rate - a.rate || a.late - b.late);
 
-  const topPerformer = perStaff.find((p) => p.total > 0);
-  const riskiestSite = perSite.find((s) => s.overdue > 0);
+  const worstSite = perSite.find((s) => s.late > 0);
+  const top = perStaff[0];
+
+  const sentences: string[] = [];
+  if (total === 0) sentences.push("No tasks yet.");
+  else {
+    sentences.push(`${counts.approved} of ${total} tasks are done across ${sites.length} ${sites.length === 1 ? "site" : "sites"}.`);
+    sentences.push(late.length ? `${late.length} ${late.length === 1 ? "task is" : "tasks are"} late${worstSite ? `, mostly at ${worstSite.site.name}` : ""}.` : "Nothing is late.");
+    if (counts.completed) sentences.push(`${counts.completed} waiting for your review.`);
+    if (top && top.rate > 0) sentences.push(`${firstName(top.person.name)} is leading at ${top.rate}%.`);
+  }
 
   return (
     <AppShell role={session!.user.role} name={session!.user.name}>
-      <div className="mb-5">
-        <h1 className="text-xl font-semibold text-slate-900">Insights</h1>
-        <p className="text-sm text-slate-500">Where the portfolio stands, in plain language.</p>
-      </div>
+      <PageHeader title="Insights" />
 
-      {/* Compact stat strip */}
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Total" value={totalTasks} icon={ListChecks} />
-        <StatCard label="Approved" value={doneCount} icon={CheckCircle2} />
-        <StatCard label="Completion" value={`${completionRate}%`} icon={TrendingUp} />
-        <StatCard label="Overdue" value={overdueTasks.length} tone={overdueTasks.length > 0 ? "danger" : "default"} icon={AlertTriangle} />
-      </div>
-
-      {/* At-a-glance narrative */}
-      <Card className="mb-5">
-        <div className="px-5 py-4">
-          <p className="mb-2 text-sm font-semibold text-slate-900">This week, at a glance</p>
-          <p className="text-sm leading-relaxed text-slate-700">
-            {totalTasks === 0 ? (
-              "No tasks recorded yet. Create the first one from the dashboard."
-            ) : (
-              <>
-                {sites.length} site{sites.length === 1 ? "" : "s"} are being managed with{" "}
-                <strong className="text-slate-900">{totalTasks}</strong> total task{totalTasks === 1 ? "" : "s"}.{" "}
-                <strong className="text-emerald-700">{completionRate}%</strong> have been approved.{" "}
-                {overdueTasks.length > 0 ? (
-                  <>
-                    There {overdueTasks.length === 1 ? "is" : "are"}{" "}
-                    <strong className="text-red-600">{overdueTasks.length} overdue task{overdueTasks.length === 1 ? "" : "s"}</strong>
-                    {riskiestSite && <> — mostly at <strong>{riskiestSite.site.name}</strong></>}
-                    .{" "}
-                  </>
-                ) : (
-                  "Nothing is overdue right now — a clean run. "
-                )}
-                {topPerformer && topPerformer.completionRate > 0 && (
-                  <>
-                    <strong>{topPerformer.person.name}</strong> is leading with a{" "}
-                    <strong className="text-emerald-700">{topPerformer.completionRate}%</strong> completion rate.
-                  </>
-                )}
-              </>
-            )}
-          </p>
-        </div>
-      </Card>
-
-      {/* AI briefing */}
-      <Card className="mb-5">
-        <CardHeader
-          title={<span className="flex items-center gap-1.5"><Sparkles size={14} className="text-brand-gold" /> AI briefing</span>}
-        />
-        <div className="px-5 py-4">
-          {isAiEnabled() ? (
-            <PortfolioInsightsPanel />
-          ) : (
-            <p className="text-sm text-slate-500">AI briefing isn&apos;t configured yet.</p>
-          )}
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        {/* Overdue */}
-        <Card>
-          <CardHeader title="Needs attention" subtitle={overdueTasks.length === 0 ? "Nothing overdue." : `${overdueTasks.length} overdue`} />
-          <div className="divide-y divide-slate-100">
-            {overdueTasks.length === 0 && <p className="px-5 py-8 text-center text-sm text-emerald-700">All clear.</p>}
-            {overdueTasks.slice(0, 8).map((t) => (
-              <div key={t.id} className="flex items-center justify-between gap-3 px-5 py-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <Avatar name={staffById[t.assigneeIds[0]]?.name ?? "?"} size="sm" />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-900">{t.title}</p>
-                    <p className="truncate text-xs text-slate-500">
-                      <Link href={`/sites/${t.siteId}`} className="hover:underline">
-                        {siteById[t.siteId]?.name ?? "Unknown"}
-                      </Link>
-                      {" · Due "}{t.deadline}
-                    </p>
-                  </div>
-                </div>
-                <PriorityPill priority={t.priority} />
-              </div>
+      <div className="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-5">
+        <Card className="p-6 lg:col-span-3">
+          <div className="flex items-center gap-5">
+            <ProgressRing value={rate} size={92} stroke={8} />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">In short</p>
+              <p className="mt-1.5 text-[15px] leading-relaxed text-slate-700">{sentences.join(" ")}</p>
+            </div>
+          </div>
+          <StatusBar counts={counts} className="mt-6 h-3" />
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+            {STATUS_ORDER.map((s) => (
+              <span key={s} className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span className={`h-2 w-2 rounded-full ${STATUS_META[s].dot}`} />
+                {STATUS_META[s].label}
+                <b className="font-semibold text-slate-800">{counts[s]}</b>
+              </span>
             ))}
           </div>
         </Card>
 
-        {/* Sites ranking */}
-        <Card>
-          <CardHeader title="Sites" subtitle="Sorted by overdue count" />
-          <div className="divide-y divide-slate-100">
-            {perSite.map(({ site, total, approved, overdue, awaiting }) => {
-              const rate = total > 0 ? Math.round((approved / total) * 100) : 0;
-              return (
-                <Link key={site.id} href={`/sites/${site.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-900">{site.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {total} task{total === 1 ? "" : "s"} · {rate}% approved
-                      {awaiting > 0 && <> · {awaiting} awaiting</>}
-                    </p>
-                  </div>
-                  {overdue > 0 ? (
-                    <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                      {overdue} overdue
-                    </span>
-                  ) : (
-                    <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                      on track
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+        <Card className="relative overflow-hidden lg:col-span-2">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-gold/10 blur-2xl" />
+          <CardHeader
+            title={
+              <span className="flex items-center gap-1.5">
+                <Sparkles size={14} className="text-brand-gold" /> AI briefing
+              </span>
+            }
+          />
+          <div className="px-5 pb-5">
+            {isAiEnabled() ? <PortfolioInsightsPanel /> : <p className="text-sm text-slate-400">AI is not set up.</p>}
           </div>
         </Card>
       </div>
 
-      {/* Staff */}
-      <Card className="mt-5">
-        <CardHeader title="Staff performance" subtitle="Ranked by completion rate" />
-        <div className="divide-y divide-slate-100">
-          {perStaff.length === 0 && <p className="px-5 py-8 text-center text-sm text-slate-500">No site staff yet.</p>}
-          {perStaff.map(({ person, total, approved, overdue, completionRate: rate }) => (
-            <div key={person.id} className="px-5 py-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <Avatar name={person.name} />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-900">{person.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {total > 0 ? (
-                        <>
-                          {approved}/{total} approved · {rate}% completion
-                          {overdue > 0 && <span className="ml-1 font-medium text-red-600">· {overdue} overdue</span>}
-                        </>
-                      ) : (
-                        "No tasks assigned yet."
-                      )}
+      <div className="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <Card>
+          <CardHeader title="Sites" />
+          <div className="space-y-1 px-2 pb-3">
+            {perSite.map(({ site, total: t, counts: c, late: l, rate: r }) => (
+              <Link key={site.id} href={`/sites/${site.id}`} className="block rounded-xl px-3 py-3 transition hover:bg-slate-50">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <p className="truncate text-sm font-medium text-slate-900">{site.name}</p>
+                  <span className="flex shrink-0 items-center gap-2 text-xs">
+                    {l > 0 && <span className="rounded-full bg-red-50 px-2 py-0.5 font-medium text-red-700">{l} late</span>}
+                    <span className="font-semibold text-slate-700">{r}%</span>
+                  </span>
+                </div>
+                <StatusBar counts={c} className="h-2" />
+                <p className="mt-1.5 text-xs text-slate-400">{t} tasks</p>
+              </Link>
+            ))}
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Team" />
+          <div className="space-y-1 px-2 pb-3">
+            {perStaff.length === 0 && <p className="py-8 text-center text-sm text-slate-400">No tasks assigned yet</p>}
+            {perStaff.map(({ person, total: t, done, late: l, rate: r }, i) => (
+              <div key={person.id} className="rounded-xl px-3 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Avatar name={person.name} size="md" />
+                    {i === 0 && r > 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-gold text-white ring-2 ring-white">
+                        <Trophy size={10} />
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <Link href={`/tasks?staff=${person.id}`} className="truncate text-sm font-medium text-slate-900 hover:underline">
+                        {person.name}
+                      </Link>
+                      <span className="shrink-0 text-sm font-semibold text-slate-800">{r}%</span>
+                    </div>
+                    <div className="mt-1.5">
+                      <MeterBar value={r} tone={r >= 70 ? "emerald" : r >= 40 ? "amber" : "slate"} />
+                    </div>
+                    <p className="mt-1.5 text-xs text-slate-400">
+                      {done}/{t} done{l > 0 && <span className="text-red-600"> · {l} late</span>}
                     </p>
                   </div>
                 </div>
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                  rate >= 80 ? "bg-emerald-100 text-emerald-700"
-                    : rate >= 50 ? "bg-amber-100 text-amber-700"
-                    : "bg-slate-100 text-slate-600"
-                }`}>
-                  {rate}%
-                </span>
+                {isAiEnabled() && <StaffSummaryButton staffId={person.id} />}
               </div>
-              {isAiEnabled() && total > 0 && <StaffSummaryButton staffId={person.id} />}
-            </div>
-          ))}
-        </div>
-      </Card>
-    </AppShell>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  tone = "default",
-  icon: Icon,
-}: {
-  label: string;
-  value: string | number;
-  tone?: "default" | "danger";
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-}) {
-  const danger = tone === "danger" && Number(value) > 0;
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-      <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${danger ? "bg-red-50 text-red-600" : "bg-slate-50 text-slate-500"}`}>
-        <Icon size={16} />
-      </span>
-      <div>
-        <p className={`text-xl font-semibold leading-none ${danger ? "text-red-600" : "text-slate-900"}`}>{value}</p>
-        <p className="mt-1 text-xs text-slate-500">{label}</p>
+            ))}
+          </div>
+        </Card>
       </div>
-    </div>
+
+      {late.length > 0 && (
+        <Card>
+          <CardHeader
+            title={
+              <span className="flex items-center gap-1.5">
+                <CircleAlert size={14} className="text-red-500" /> Late
+              </span>
+            }
+          />
+          <div className="px-2 pb-2">
+            {late.slice(0, 8).map((t) => (
+              <Link key={t.id} href={`/tasks/${t.id}`} className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-slate-50">
+                <Avatar name={staffById[t.assigneeIds[0]]?.name ?? "?"} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-slate-900">{t.title}</p>
+                  <p className="truncate text-xs text-slate-500">{siteById[t.siteId]?.name}</p>
+                </div>
+                <DueBadge task={t} />
+              </Link>
+            ))}
+          </div>
+        </Card>
+      )}
+    </AppShell>
   );
 }

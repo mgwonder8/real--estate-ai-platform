@@ -1,44 +1,43 @@
-import { addTaskCommentAction } from "@/app/tasks/actions";
-import type { Staff, TaskComment } from "@/lib/data/types";
+"use client";
 
-export function CommentThread({
+import { useRef } from "react";
+import { SendHorizontal } from "lucide-react";
+import { addTaskCommentAction } from "@/app/tasks/actions";
+
+export function CommentBox({
   taskId,
-  comments,
-  staffById,
+  action = addTaskCommentAction,
+  placeholder = "Write a message",
 }: {
   taskId: string;
-  comments: TaskComment[];
-  staffById: Record<string, Staff>;
+  action?: (fd: FormData) => Promise<void>;
+  placeholder?: string;
 }) {
+  const formRef = useRef<HTMLFormElement>(null);
   return (
-    <div className="mt-2 space-y-2">
-      {comments.length > 0 && (
-        <div className="space-y-1.5">
-          {comments.map((c) => (
-            <div key={c.id} className="rounded-lg bg-slate-50 px-3 py-2 text-sm">
-              <p className="text-slate-700">{c.message}</p>
-              <p className="mt-0.5 text-xs text-slate-500">
-                {staffById[c.authorId]?.name ?? "Unknown"} ({c.authorRole.replace("_", " ")}) ·{" "}
-                {new Date(c.createdAt).toLocaleString()}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-      <form action={addTaskCommentAction} className="flex gap-2">
-        <input type="hidden" name="taskId" value={taskId} />
-        <input
-          name="message"
-          placeholder="Add a comment…"
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-navy focus:outline-none"
-        />
-        <button
-          type="submit"
-          className="rounded-lg bg-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-300"
-        >
-          Send
-        </button>
-      </form>
-    </div>
+    <form
+      ref={formRef}
+      action={async (fd) => {
+        await action(fd);
+        formRef.current?.reset();
+      }}
+      className="flex items-center gap-2"
+    >
+      <input type="hidden" name="taskId" value={taskId} />
+      <input
+        name="message"
+        required
+        autoComplete="off"
+        placeholder={placeholder}
+        className="h-11 flex-1 rounded-xl bg-slate-50 px-4 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/15"
+      />
+      <button
+        type="submit"
+        aria-label="Send"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-navy text-white transition hover:bg-brand-navy-soft active:scale-95"
+      >
+        <SendHorizontal size={17} />
+      </button>
+    </form>
   );
 }

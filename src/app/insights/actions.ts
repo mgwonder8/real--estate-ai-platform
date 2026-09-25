@@ -82,7 +82,7 @@ export async function generatePortfolioInsightsAction(_prev: AiTextState, _formD
       }));
 
     if (tasks.length === 0) {
-      return { status: "success", text: "No tasks recorded yet — insights will appear once work is underway." };
+      return { status: "success", text: "No tasks yet. Insights will appear once work starts." };
     }
 
     const text = await generatePortfolioInsights({ siteSummaries, overdueTasks });

@@ -10,7 +10,8 @@ import { notifyManyStaff } from "@/lib/push/send";
 import type { TaskPriority, TaskStatus } from "@/lib/data/types";
 
 function revalidateTaskPaths() {
-  revalidatePath("/tasks");
+  revalidatePath("/tasks", "layout");
+  revalidatePath("/sites", "layout");
   revalidatePath("/dashboard");
   revalidatePath("/site");
   revalidatePath("/insights");
@@ -75,7 +76,7 @@ export async function updateTaskStatusAction(formData: FormData) {
       await notifyManyStaff(recipients, {
         title: "Task awaiting approval",
         body: task.title,
-        url: "/tasks",
+        url: `/tasks/${taskId}`,
       });
     }
   }
@@ -157,7 +158,7 @@ export async function addTaskCommentAction(formData: FormData) {
   if (task) {
     if (authorRole === "site_staff") {
       const recipients = await listOfficeAndOwnerStaffIds();
-      await notifyManyStaff(recipients, { title: "New comment", body: message, url: "/tasks" });
+      await notifyManyStaff(recipients, { title: "New comment", body: message, url: `/tasks/${taskId}` });
     } else {
       await notifyManyStaff(task.assigneeIds, { title: "New comment on your task", body: message, url: "/site" });
     }

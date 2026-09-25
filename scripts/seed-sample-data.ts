@@ -176,7 +176,7 @@ async function main() {
 
   // One World tasks
   const t1 = await makeTask({
-    title: "Verify EV charging point installation — Tower B",
+    title: "Verify EV charging point installation, Tower B",
     brief: "Confirm all EV charging points on Tower B parking level are wired and tested per the electrical plan.",
     siteId: oneWorld.id,
     assigneeIds: [oneWorldStaff1.id],
@@ -214,14 +214,14 @@ async function main() {
   // Manjeet Pride Landmark tasks
   const t5 = await makeTask({
     title: "Test LED dancing fountain electrical & water sync",
-    brief: "Run a full test cycle on the LED dancing fountain — check electrical timing sync against the water jets.",
+    brief: "Run a full test cycle on the LED dancing fountain, check electrical timing sync against the water jets.",
     siteId: landmark.id,
     assigneeIds: [landmarkStaff1.id],
     priority: "normal",
     deadline: futureDate(10),
   });
   const t6 = await makeTask({
-    title: "CCTV camera installation audit — main gate",
+    title: "CCTV camera installation audit, main gate",
     brief: "Audit CCTV camera coverage and recording status at the main gated-community entrance.",
     siteId: landmark.id,
     assigneeIds: [landmarkStaff1.id],
@@ -242,7 +242,7 @@ async function main() {
 
   console.log("Advancing some tasks through the workflow to populate the demo...");
 
-  // t3: pool tiling — move to in_progress then completed with proof, then approved
+  // t3: pool tiling, move to in_progress then completed with proof, then approved
   if (t3.status === "pending") {
     await updateTaskStatus({ taskId: t3.id, toStatus: "in_progress", changedBy: dreamWorldStaff1.id });
     await addProof({
@@ -255,33 +255,33 @@ async function main() {
       taskId: t3.id,
       approvedBy: office1.id,
       approverRole: "office_staff",
-      comment: "Good work — water test scheduled for Thursday.",
+      comment: "Good work, water test scheduled for Thursday.",
     });
   } else {
     console.log(`  Task "${t3.title}" already advanced (status=${t3.status}), skipping.`);
   }
 
-  // t1: EV charging — move to in_progress
+  // t1: EV charging, move to in_progress
   if (t1.status === "pending") {
     await updateTaskStatus({ taskId: t1.id, toStatus: "in_progress", changedBy: oneWorldStaff1.id });
   } else {
     console.log(`  Task "${t1.title}" already advanced (status=${t1.status}), skipping.`);
   }
 
-  // t6: CCTV audit — completed, awaiting approval
+  // t6: CCTV audit, completed, awaiting approval
   if (t6.status === "pending") {
     await updateTaskStatus({ taskId: t6.id, toStatus: "in_progress", changedBy: landmarkStaff1.id });
     await addProof({
       taskId: t6.id,
       submittedBy: landmarkStaff1.id,
-      notes: "All 6 main-gate cameras confirmed recording. One angle needs adjustment — flagged to security vendor.",
+      notes: "All 6 main-gate cameras confirmed recording. One angle needs adjustment, flagged to security vendor.",
     });
     await updateTaskStatus({ taskId: t6.id, toStatus: "completed", changedBy: landmarkStaff1.id });
     await addTaskComment({
       taskId: t6.id,
       authorId: office1.id,
       authorRole: "office_staff",
-      message: "Thanks Ravindra — please share the vendor's ticket number for the angle adjustment once raised.",
+      message: "Thanks Ravindra, please share the vendor's ticket number for the angle adjustment once raised.",
     });
   } else {
     console.log(`  Task "${t6.title}" already advanced (status=${t6.status}), skipping.`);
@@ -294,7 +294,7 @@ async function main() {
       raisedBy: oneWorldStaff1.id,
       siteId: oneWorld.id,
       taskId: t2.id,
-      message: "The treehouse access ladder on the north side looks unstable — should we halt access until it's re-fixed?",
+      message: "The treehouse access ladder on the north side looks unstable, should we halt access until it's re-fixed?",
     });
     await replyToQuery({
       queryId: q1.id,

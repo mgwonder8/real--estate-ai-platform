@@ -1,37 +1,44 @@
-import type { TaskPriority, TaskStatus } from "@/lib/data/types";
-
-const statusStyles: Record<TaskStatus, string> = {
-  pending: "bg-slate-100 text-slate-700 ring-slate-300",
-  in_progress: "bg-amber-100 text-amber-800 ring-amber-300",
-  completed: "bg-blue-100 text-blue-800 ring-blue-300",
-  approved: "bg-emerald-100 text-emerald-800 ring-emerald-300",
-};
-
-const statusLabels: Record<TaskStatus, string> = {
-  pending: "Pending",
-  in_progress: "In Progress",
-  completed: "Awaiting Approval",
-  approved: "Approved",
-};
-
-const priorityStyles: Record<TaskPriority, string> = {
-  low: "bg-slate-100 text-slate-600 ring-slate-300",
-  normal: "bg-blue-100 text-blue-700 ring-blue-300",
-  urgent: "bg-red-100 text-red-700 ring-red-300",
-};
+import { PRIORITY_META, STATUS_META, dueInfo } from "@/lib/task-meta";
+import type { Task, TaskPriority, TaskStatus } from "@/lib/data/types";
 
 export function StatusPill({ status }: { status: TaskStatus }) {
+  const m = STATUS_META[status];
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${statusStyles[status]}`}>
-      {statusLabels[status]}
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${m.pill}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${m.dot}`} />
+      {m.label}
     </span>
   );
 }
 
 export function PriorityPill({ priority }: { priority: TaskPriority }) {
+  const m = PRIORITY_META[priority];
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${priorityStyles[priority]}`}>
-      {priority === "urgent" ? "Urgent" : priority === "low" ? "Low" : "Normal"}
+    <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${m.pill}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${m.dot}`} />
+      {m.label}
+    </span>
+  );
+}
+
+export function PriorityDot({ priority }: { priority: TaskPriority }) {
+  if (priority === "normal") return null;
+  const m = PRIORITY_META[priority];
+  return <span title={m.label} className={`inline-block h-2 w-2 shrink-0 rounded-full ${m.dot}`} />;
+}
+
+const DUE_TONES = {
+  red: "bg-red-50 text-red-700",
+  amber: "bg-amber-50 text-amber-800",
+  slate: "text-slate-500",
+} as const;
+
+export function DueBadge({ task }: { task: Pick<Task, "deadline" | "status"> }) {
+  const info = dueInfo(task);
+  if (!info) return null;
+  return (
+    <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${DUE_TONES[info.tone]}`}>
+      {info.label}
     </span>
   );
 }

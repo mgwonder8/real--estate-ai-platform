@@ -40,7 +40,7 @@ export default async function LoginPage({
             Run every site, from one screen.
           </h2>
           <p className="mt-3 max-w-sm text-sm text-slate-300">
-            Assign work, review proof of completion, and keep your whole portfolio on schedule —
+            Assign work, review proof of completion, and keep your whole portfolio on schedule,
             without another phone call.
           </p>
         </div>

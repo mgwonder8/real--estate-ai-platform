@@ -23,7 +23,7 @@ const TABS_TO_WIPE = [
 
 async function wipeAll() {
   for (const tab of TABS_TO_WIPE) {
-    // Loop until the table is empty — retry after any rate-limit hiccups mid-wipe.
+    // Loop until the table is empty, retry after any rate-limit hiccups mid-wipe.
     for (let pass = 0; pass < 5; pass++) {
       try {
         const { rows } = await readTable(tab);
@@ -31,7 +31,7 @@ async function wipeAll() {
           if (pass === 0) console.log(`  [${tab}] already empty`);
           break;
         }
-        console.log(`  [${tab}] pass ${pass + 1} — clearing ${rows.length} row(s)…`);
+        console.log(`  [${tab}] pass ${pass + 1}, clearing ${rows.length} row(s)…`);
         for (const r of rows) {
           await clearRow(tab, r.rowNumber);
           await new Promise((r) => setTimeout(r, 120));
@@ -64,7 +64,7 @@ async function main() {
     name: "Govindham",
     address: "Jalna, Maharashtra",
     briefText:
-      "Premium residential development on the Jalna–Aurangabad corridor. 2/3 BHK residences with clubhouse, landscaped gardens, kids' play area and 24×7 security. Ongoing construction across two towers.",
+      "Premium residential development on the Jalna-Aurangabad corridor. 2/3 BHK residences with clubhouse, landscaped gardens, kids' play area and 24×7 security. Ongoing construction across two towers.",
   });
 
   const ranaUtrayan = await createSite({
@@ -78,7 +78,7 @@ async function main() {
     name: "Millennium Heights",
     address: "Aurangabad Road, Jalna, Maharashtra",
     briefText:
-      "Flagship high-rise project — 3/4 BHK residences with clubhouse, pool and rooftop garden. Structural work in progress; MEP scheduled next quarter.",
+      "Flagship high-rise project, 3/4 BHK residences with clubhouse, pool and rooftop garden. Structural work in progress; MEP scheduled next quarter.",
   });
 
   console.log("Creating owner accounts…");
@@ -136,7 +136,7 @@ async function main() {
 
   // Govindham (Vinayak)
   const gTask1 = await mk({
-    title: "Check tower B plaster finish — 4th floor",
+    title: "Check tower B plaster finish, 4th floor",
     brief: "Verify wall plaster quality on all 4th floor units. Flag any uneven patches to the contractor.",
     siteId: govindham.id,
     assigneeIds: [vinayak.id],
@@ -154,7 +154,7 @@ async function main() {
   });
 
   const gTask3 = await mk({
-    title: "Electrical rough-in audit — Tower A basement",
+    title: "Electrical rough-in audit, Tower A basement",
     brief: "Walk through Tower A basement with the electrical contractor and confirm conduit routing matches the plan.",
     siteId: govindham.id,
     assigneeIds: [vinayak.id],
@@ -173,7 +173,7 @@ async function main() {
   });
 
   const rTask2 = await mk({
-    title: "Test water pressure — Building 2",
+    title: "Test water pressure, Building 2",
     brief: "Run pressure test on all risers in Building 2 and log readings. Report any drops below 2.5 bar.",
     siteId: ranaUtrayan.id,
     assigneeIds: [ganesh.id],
@@ -183,7 +183,7 @@ async function main() {
 
   // Millennium Heights (Both staff, joint task)
   await mk({
-    title: "Joint safety walkthrough — 12th floor slab",
+    title: "Joint safety walkthrough, 12th floor slab",
     brief: "Both site staff to walk the newly cast 12th-floor slab with the structural consultant.",
     siteId: millenniumHeights.id,
     assigneeIds: [vinayak.id, ganesh.id],
@@ -193,7 +193,7 @@ async function main() {
 
   console.log("Advancing sample tasks through the workflow…");
 
-  // gTask2 — overdue landscape delivery, now completed with proof awaiting approval
+  // gTask2, overdue landscape delivery, now completed with proof awaiting approval
   await updateTaskStatus({ taskId: gTask2.id, toStatus: "in_progress", changedBy: vinayak.id });
   await addProof({
     taskId: gTask2.id,
@@ -202,25 +202,25 @@ async function main() {
   });
   await updateTaskStatus({ taskId: gTask2.id, toStatus: "completed", changedBy: vinayak.id });
 
-  // gTask1 — in progress
+  // gTask1, in progress
   await updateTaskStatus({ taskId: gTask1.id, toStatus: "in_progress", changedBy: vinayak.id });
 
-  // rTask2 — completed and approved
+  // rTask2, completed and approved
   await updateTaskStatus({ taskId: rTask2.id, toStatus: "in_progress", changedBy: ganesh.id });
   await addProof({
     taskId: rTask2.id,
     submittedBy: ganesh.id,
-    notes: "Pressure test completed. All risers between 2.8–3.1 bar. Readings logged in vendor sheet.",
+    notes: "Pressure test completed. All risers between 2.8 to 3.1 bar. Readings logged in vendor sheet.",
   });
   await updateTaskStatus({ taskId: rTask2.id, toStatus: "completed", changedBy: ganesh.id });
   await approveTask({
     taskId: rTask2.id,
     approvedBy: rahul.id,
     approverRole: "owner",
-    comment: "Great — please share the vendor sheet link in the next site update.",
+    comment: "Great, please share the vendor sheet link in the next site update.",
   });
 
-  // rTask1 — comment thread example
+  // rTask1, comment thread example
   await addTaskComment({
     taskId: rTask1.id,
     authorId: kedar.id,

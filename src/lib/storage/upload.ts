@@ -3,7 +3,7 @@ import { saveProofFileLocally } from "@/lib/storage/local-upload";
 
 /**
  * Saves an uploaded proof file and returns a URL the app can serve back to
- * logged-in users. Uses Vercel Blob (private access — proof photos of real
+ * logged-in users. Uses Vercel Blob (private access, proof photos of real
  * client sites shouldn't be world-readable) when BLOB_READ_WRITE_TOKEN is
  * configured, proxied through /api/media since private blobs need our
  * server's token to read; otherwise falls back to local disk for local dev

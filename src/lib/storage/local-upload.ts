@@ -7,7 +7,7 @@ const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "proofs");
  * Stores an uploaded proof file on local disk under public/uploads/proofs and
  * returns a URL served directly by Next.js. This is a stopgap for local/VPS
  * deployment: it will NOT persist on serverless hosts (e.g. Vercel) with an
- * ephemeral filesystem — swap for S3/Cloudinary/GCS before deploying there.
+ * ephemeral filesystem, swap for S3/Cloudinary/GCS before deploying there.
  */
 export async function saveProofFileLocally(file: {
   name: string;

@@ -16,6 +16,12 @@ function getClient(): OpenAI {
 
 const MODEL = "gpt-4o-mini";
 
+const STYLE = " Never use em dashes or en dashes; use commas or periods instead.";
+
+export function stripDashes(text: string): string {
+  return text.replace(/\s*[\u2014\u2013]\s*/g, ", ").replace(/,\s*,/g, ",");
+}
+
 export interface ParsedTaskDraft {
   title: string;
   brief: string;
@@ -64,12 +70,12 @@ export async function parseTaskFromChat(input: {
         role: "system",
         content:
           "You turn a real estate site owner's short instruction into a structured task assignment. " +
-          "Match the site and assignee(s) to the closest entries in the provided lists by name — be forgiving of typos, " +
+          "Match the site and assignee(s) to the closest entries in the provided lists by name, be forgiving of typos, " +
           "abbreviations, and partial names. A task can be assigned to more than one staff member if the instruction " +
-          "implies it (e.g. names multiple people, or says 'the team' at a site — in that case include everyone tied to that site). " +
+          "implies it (e.g. names multiple people, or says 'the team' at a site; in that case include everyone tied to that site). " +
           "If a staff member is tied to a specific site, prefer them for tasks at that site. " +
           "Default priority is 'normal' and proofRequired is true unless the instruction clearly implies otherwise. " +
-          "If today's date matters, assume it is " + new Date().toISOString().slice(0, 10) + ".",
+          "If today's date matters, assume it is " + new Date().toISOString().slice(0, 10) + "." + STYLE,
       },
       {
         role: "user",
@@ -88,7 +94,8 @@ export async function parseTaskFromChat(input: {
 
   const content = response.choices[0]?.message?.content;
   if (!content) throw new Error("AI did not return a task draft");
-  return JSON.parse(content) as ParsedTaskDraft;
+  const draft = JSON.parse(content) as ParsedTaskDraft;
+  return { ...draft, title: stripDashes(draft.title), brief: stripDashes(draft.brief), notes: stripDashes(draft.notes) };
 }
 
 /** Generates a narrative performance summary for one staff member from their task/proof history. */
@@ -107,7 +114,7 @@ export async function generateStaffPerformanceSummary(input: {
           "You are an operations analyst for a real estate construction company. Write a short (3-5 sentence), " +
           "specific, plain-language performance summary for a staff member based on their task history. " +
           "Mention completion rate, timeliness, and any pattern worth flagging (e.g. recurring delays, high urgent-task load). " +
-          "Be factual and neutral, not generic praise. No markdown headers, just prose.",
+          "Be factual and neutral, not generic praise. No markdown headers, just prose." + STYLE,
       },
       {
         role: "user",
@@ -115,7 +122,7 @@ export async function generateStaffPerformanceSummary(input: {
       },
     ],
   });
-  return response.choices[0]?.message?.content?.trim() ?? "";
+  return stripDashes(response.choices[0]?.message?.content?.trim() ?? "");
 }
 
 /** Generates a portfolio-wide risk/insights summary across all sites and tasks. */
@@ -133,7 +140,7 @@ export async function generatePortfolioInsights(input: {
           "You are an operations analyst for a real estate construction company managing multiple active sites. " +
           "Given per-site task counts and a list of overdue tasks, write a short briefing (4-6 sentences or a tight " +
           "bulleted list) for the owner: which sites are at risk, which overdue tasks need attention first, and one " +
-          "concrete recommendation. Be specific with names and numbers from the data given. No markdown headers.",
+          "concrete recommendation. Be specific with names and numbers from the data given. No markdown headers." + STYLE,
       },
       {
         role: "user",
@@ -141,5 +148,5 @@ export async function generatePortfolioInsights(input: {
       },
     ],
   });
-  return response.choices[0]?.message?.content?.trim() ?? "";
+  return stripDashes(response.choices[0]?.message?.content?.trim() ?? "");
 }

@@ -22,7 +22,7 @@ export async function createSiteAction(formData: FormData) {
     briefFileUrl,
     briefFileName,
   });
-  revalidatePath("/sites");
+  revalidatePath("/sites", "layout");
   revalidatePath("/dashboard");
   revalidatePath("/tasks");
   revalidatePath("/site");
@@ -45,6 +45,6 @@ export async function updateSiteBriefAction(formData: FormData) {
     ...(briefFileUrl ? { briefFileUrl, briefFileName } : {}),
   });
 
-  revalidatePath("/sites");
+  revalidatePath("/sites", "layout");
   revalidatePath("/site");
 }

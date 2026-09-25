@@ -1,24 +1,22 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { SendHorizontal } from "lucide-react";
 import { VoiceInputButton } from "@/components/voice-input-button";
 import { raiseQueryAction } from "@/app/site/actions";
 import { useGeolocation } from "@/lib/use-geolocation";
 
 export function RaiseQueryForm() {
   const [message, setMessage] = useState("");
-  const formRef = useRef<HTMLFormElement>(null);
   const { lat, lng } = useGeolocation();
 
   return (
     <form
-      ref={formRef}
-      action={(fd) => {
-        raiseQueryAction(fd);
+      action={async (fd) => {
+        await raiseQueryAction(fd);
         setMessage("");
       }}
-      className="flex flex-col gap-2 px-5 py-4 sm:flex-row"
+      className="flex items-center gap-2"
     >
       <input type="hidden" name="gpsLat" value={lat} />
       <input type="hidden" name="gpsLng" value={lng} />
@@ -27,11 +25,18 @@ export function RaiseQueryForm() {
         required
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        placeholder="Describe the issue…"
-        className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-navy focus:outline-none"
+        placeholder="Type or speak"
+        className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 px-3.5 text-sm placeholder:text-slate-400 focus:border-brand-navy focus:outline-none"
       />
       <VoiceInputButton onTranscribed={(text) => setMessage(text)} />
-      <Button type="submit">Send</Button>
+      <button
+        type="submit"
+        aria-label="Send"
+        disabled={!message.trim()}
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-navy text-white transition hover:bg-brand-navy-soft active:scale-95 disabled:opacity-40"
+      >
+        <SendHorizontal size={16} />
+      </button>
     </form>
   );
 }

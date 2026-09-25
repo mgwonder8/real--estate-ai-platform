@@ -43,6 +43,6 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-// Minimal fetch handler — required by some browsers for install/push eligibility.
+// Minimal fetch handler, required by some browsers for install/push eligibility.
 // No caching strategy: this app relies on live server-rendered data.
 self.addEventListener("fetch", () => {});

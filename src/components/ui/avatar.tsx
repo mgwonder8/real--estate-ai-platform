@@ -25,7 +25,8 @@ function initialsFor(name: string): string {
 const SIZES = {
   xs: "h-6 w-6 text-[10px]",
   sm: "h-8 w-8 text-xs",
-  md: "h-9 w-9 text-sm",
+  md: "h-10 w-10 text-sm",
+  lg: "h-12 w-12 text-base",
 };
 
 export function Avatar({ name, size = "sm" }: { name: string; size?: keyof typeof SIZES }) {
@@ -39,21 +40,29 @@ export function Avatar({ name, size = "sm" }: { name: string; size?: keyof typeo
   );
 }
 
-export function AvatarStack({ names, max = 3 }: { names: string[]; max?: number }) {
+export function AvatarStack({
+  names,
+  max = 3,
+  size = "xs",
+}: {
+  names: string[];
+  max?: number;
+  size?: keyof typeof SIZES;
+}) {
   const visible = names.slice(0, max);
   const extra = names.length - visible.length;
   if (names.length === 0) {
-    return <span className="text-sm text-slate-400">Unassigned</span>;
+    return <span className="text-xs text-slate-400">Unassigned</span>;
   }
   return (
-    <span className="flex items-center -space-x-2">
+    <span className="flex items-center -space-x-1.5" title={names.join(", ")}>
       {visible.map((name, i) => (
-        <span key={i} className="ring-2 ring-white rounded-full">
-          <Avatar name={name} size="xs" />
+        <span key={i} className="rounded-full ring-2 ring-white">
+          <Avatar name={name} size={size} />
         </span>
       ))}
       {extra > 0 && (
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-[10px] font-semibold text-slate-600 ring-2 ring-white">
+        <span className={`flex items-center justify-center rounded-full bg-slate-100 font-semibold text-slate-600 ring-2 ring-white ${SIZES[size]}`}>
           +{extra}
         </span>
       )}
