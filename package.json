@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:owner": "tsx --env-file=.env.local scripts/seed-owner.ts"
+    "seed:owner": "tsx --env-file=.env.local scripts/seed-owner.ts",
+    "reseed:millennium": "tsx --env-file=.env.local scripts/reseed-millennium.ts"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.0",

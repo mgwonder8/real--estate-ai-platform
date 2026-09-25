@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
-import { Search, ChevronDown, ChevronRight } from "lucide-react";
+import { Search, ChevronDown, ChevronRight, X } from "lucide-react";
 import { AvatarStack } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { StatusPill, PriorityPill } from "@/components/ui/status-pill";
@@ -27,7 +27,7 @@ const STATUS_FILTERS: { value: TaskStatus | "all"; label: string }[] = [
   { value: "all", label: "All statuses" },
   { value: "pending", label: "Pending" },
   { value: "in_progress", label: "In Progress" },
-  { value: "completed", label: "Awaiting Approval" },
+  { value: "completed", label: "Awaiting" },
   { value: "approved", label: "Approved" },
 ];
 
@@ -46,6 +46,8 @@ export function TaskTable({
 }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
+  const [siteFilter, setSiteFilter] = useState<string>("all");
+  const [staffFilter, setStaffFilter] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const siteById = useMemo(() => Object.fromEntries(sites.map((s) => [s.id, s])), [sites]);
@@ -63,10 +65,17 @@ export function TaskTable({
     return map;
   }, [comments]);
 
+  const assignableStaff = useMemo(
+    () => staff.filter((s) => s.role === "site_staff" || s.role === "office_staff"),
+    [staff]
+  );
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     return tasks.filter((t) => {
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
+      if (siteFilter !== "all" && t.siteId !== siteFilter) return false;
+      if (staffFilter !== "all" && !t.assigneeIds.includes(staffFilter)) return false;
       if (!term) return true;
       const siteName = siteById[t.siteId]?.name ?? "";
       const assigneeNames = t.assigneeIds.map((id) => staffById[id]?.name ?? "").join(" ");
@@ -76,34 +85,71 @@ export function TaskTable({
         assigneeNames.toLowerCase().includes(term)
       );
     });
-  }, [tasks, search, statusFilter, siteById, staffById]);
+  }, [tasks, search, statusFilter, siteFilter, staffFilter, siteById, staffById]);
+
+  const anyFilterActive = statusFilter !== "all" || siteFilter !== "all" || staffFilter !== "all" || !!search.trim();
 
   return (
     <div>
-      <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
+      <div className="flex flex-col gap-2 border-b border-slate-100 px-5 py-4">
+        <div className="relative">
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tasks, sites, staff…"
+            placeholder="Search"
             className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm focus:border-brand-navy focus:outline-none"
           />
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as TaskStatus | "all")}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-navy focus:outline-none"
-        >
-          {STATUS_FILTERS.map((f) => (
-            <option key={f.value} value={f.value}>{f.label}</option>
-          ))}
-        </select>
+        <div className="flex flex-wrap gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as TaskStatus | "all")}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-navy focus:outline-none"
+          >
+            {STATUS_FILTERS.map((f) => (
+              <option key={f.value} value={f.value}>{f.label}</option>
+            ))}
+          </select>
+          <select
+            value={siteFilter}
+            onChange={(e) => setSiteFilter(e.target.value)}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-navy focus:outline-none"
+          >
+            <option value="all">All sites</option>
+            {sites.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          <select
+            value={staffFilter}
+            onChange={(e) => setStaffFilter(e.target.value)}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-navy focus:outline-none"
+          >
+            <option value="all">All staff</option>
+            {assignableStaff.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          {anyFilterActive && (
+            <button
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("all");
+                setSiteFilter("all");
+                setStaffFilter("all");
+              }}
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100"
+            >
+              <X size={12} /> Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {filtered.length === 0 ? (
         <p className="px-5 py-10 text-center text-sm text-slate-500">
-          {tasks.length === 0 ? "No tasks yet. Add the first one above." : "No tasks match your search/filter."}
+          {tasks.length === 0 ? "No tasks yet." : "No matches."}
         </p>
       ) : (
         <div className="overflow-x-auto">
@@ -112,10 +158,10 @@ export function TaskTable({
               <tr className="border-b border-slate-100 text-xs font-medium uppercase tracking-wide text-slate-400">
                 <th className="px-5 py-3 font-medium">Task</th>
                 <th className="hidden px-3 py-3 font-medium sm:table-cell">Site</th>
-                <th className="px-3 py-3 font-medium">Assigned to</th>
+                <th className="px-3 py-3 font-medium">Assigned</th>
                 <th className="hidden px-3 py-3 font-medium md:table-cell">Priority</th>
                 <th className="px-3 py-3 font-medium">Status</th>
-                <th className="hidden px-3 py-3 font-medium lg:table-cell">Deadline</th>
+                <th className="hidden px-3 py-3 font-medium lg:table-cell">Due</th>
                 <th className="w-8 px-3 py-3" />
               </tr>
             </thead>
@@ -133,13 +179,10 @@ export function TaskTable({
                       onClick={() => setExpandedId(isOpen ? null : task.id)}
                       className="cursor-pointer border-b border-slate-50 hover:bg-slate-50"
                     >
-                      <td className="max-w-[220px] px-5 py-3">
+                      <td className="max-w-[240px] px-5 py-3">
                         <p className="truncate font-medium text-slate-800">{task.title}</p>
-                        {(task.resourceLink || task.resourceFileUrl) && (
-                          <p className="mt-0.5 text-xs text-brand-navy">🔗 Has resource</p>
-                        )}
                       </td>
-                      <td className="hidden px-3 py-3 text-slate-600 sm:table-cell">{siteById[task.siteId]?.name ?? "Unknown"}</td>
+                      <td className="hidden px-3 py-3 text-slate-600 sm:table-cell">{siteById[task.siteId]?.name ?? "—"}</td>
                       <td className="px-3 py-3"><AvatarStack names={assigneeNames} /></td>
                       <td className="hidden px-3 py-3 md:table-cell"><PriorityPill priority={task.priority} /></td>
                       <td className="px-3 py-3"><StatusPill status={task.status} /></td>
@@ -157,12 +200,12 @@ export function TaskTable({
                               <div className="flex flex-wrap gap-3 text-xs">
                                 {task.resourceLink && (
                                   <a href={task.resourceLink} target="_blank" rel="noopener noreferrer" className="text-brand-navy hover:underline">
-                                    🔗 Linked resource
+                                    🔗 Link
                                   </a>
                                 )}
                                 {task.resourceFileUrl && (
                                   <a href={task.resourceFileUrl} target="_blank" rel="noopener noreferrer" className="text-brand-navy hover:underline">
-                                    📎 {task.resourceFileName || "Attached file"}
+                                    📎 {task.resourceFileName || "File"}
                                   </a>
                                 )}
                               </div>
@@ -187,7 +230,7 @@ export function TaskTable({
                               {taskProofs.length > 0 && (
                                 <div>
                                   <p className="mb-2 text-xs font-medium text-slate-500">
-                                    {taskProofs.length} proof{taskProofs.length === 1 ? "" : "s"} submitted
+                                    {taskProofs.length} proof{taskProofs.length === 1 ? "" : "s"}
                                   </p>
                                   <div className="space-y-2">
                                     {taskProofs.map((proof) => (
@@ -196,26 +239,25 @@ export function TaskTable({
                                           // eslint-disable-next-line @next/next/no-img-element
                                           <img
                                             src={proof.photoUrl}
-                                            alt="Submitted proof"
+                                            alt="Proof"
                                             className="h-16 w-16 rounded-md object-cover ring-1 ring-slate-200"
                                           />
                                         )}
                                         <div className="min-w-0 text-sm">
-                                          <p className="text-slate-700">{proof.notes || "No notes provided."}</p>
+                                          <p className="text-slate-700">{proof.notes || "—"}</p>
                                           <p className="mt-0.5 text-xs text-slate-500">
-                                            {staffById[proof.submittedBy]?.name ?? "Unknown"} ·{" "}
+                                            {staffById[proof.submittedBy]?.name ?? "?"} ·{" "}
                                             {new Date(proof.submittedAt).toLocaleString()}
                                             {proof.gpsLat && proof.gpsLng && (
                                               <>
-                                                {" "}
-                                                ·{" "}
+                                                {" · "}
                                                 <a
                                                   href={`https://maps.google.com/?q=${proof.gpsLat},${proof.gpsLng}`}
                                                   target="_blank"
                                                   rel="noopener noreferrer"
                                                   className="text-brand-navy hover:underline"
                                                 >
-                                                  View location
+                                                  Location
                                                 </a>
                                               </>
                                             )}

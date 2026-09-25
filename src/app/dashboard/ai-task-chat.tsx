@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
+import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VoiceInputButton } from "@/components/voice-input-button";
 import { AssigneeCheckboxes } from "@/components/assignee-checkboxes";
@@ -29,13 +30,13 @@ export function AiTaskChat({ sites, staff }: { sites: Site[]; staff: Staff[] }) 
           setDismissed(false);
           formAction(fd);
         }}
-        className="flex flex-col gap-2 sm:flex-row"
+        className="flex gap-2"
       >
         <input
           name="message"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder='Try: "Urgent — check waterproofing on 5th floor at One World, assign to Ramesh, due Friday"'
+          placeholder="What needs doing?"
           className={`${inputClass} flex-1`}
           required
         />
@@ -45,8 +46,8 @@ export function AiTaskChat({ sites, staff }: { sites: Site[]; staff: Staff[] }) 
             requestAnimationFrame(() => formRef.current?.requestSubmit());
           }}
         />
-        <Button type="submit" disabled={pending} className="sm:w-auto">
-          {pending ? "Thinking…" : "Parse with AI"}
+        <Button type="submit" disabled={pending} className="gap-1.5">
+          {pending ? "…" : (<><Send size={14} /> Enter</>)}
         </Button>
       </form>
 
@@ -58,16 +59,19 @@ export function AiTaskChat({ sites, staff }: { sites: Site[]; staff: Staff[] }) 
 
       {showDraft && (
         <div className="rounded-lg border border-brand-gold/40 bg-amber-50/40 p-4">
-          <p className="mb-3 text-xs font-medium text-slate-600">
-            AI read: “{state.draft.notes ? state.draft.notes : "looks clear"}” — review before creating.
-            {state.draft.confidence !== "high" && (
-              <span className="ml-1 text-amber-700">(confidence: {state.draft.confidence})</span>
-            )}
-          </p>
+          {state.draft.notes && (
+            <p className="mb-3 text-xs text-slate-600">
+              {state.draft.notes}
+              {state.draft.confidence !== "high" && (
+                <span className="ml-1 text-amber-700">({state.draft.confidence} confidence)</span>
+              )}
+            </p>
+          )}
           <form
             action={async (fd) => {
               await createTaskAction(fd);
               setDismissed(true);
+              setMessage("");
             }}
             className="grid grid-cols-1 gap-3 sm:grid-cols-2"
           >
@@ -88,10 +92,6 @@ export function AiTaskChat({ sites, staff }: { sites: Site[]; staff: Staff[] }) 
                 ))}
               </select>
             </div>
-            <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-slate-700">Assign to</label>
-              <AssigneeCheckboxes staff={staff.filter((s) => s.active)} defaultSelected={state.draft.assigneeIds} />
-            </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">Priority</label>
               <select name="priority" defaultValue={state.draft.priority} className={inputClass}>
@@ -100,17 +100,21 @@ export function AiTaskChat({ sites, staff }: { sites: Site[]; staff: Staff[] }) 
                 <option value="urgent">Urgent</option>
               </select>
             </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-xs font-medium text-slate-700">Assign to</label>
+              <AssigneeCheckboxes staff={staff.filter((s) => s.active && s.role !== "owner")} defaultSelected={state.draft.assigneeIds} />
+            </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">Deadline</label>
               <input name="deadline" type="date" defaultValue={state.draft.deadline ?? ""} className={inputClass} />
             </div>
-            <label className="flex items-center gap-2 text-sm text-slate-600 sm:col-span-2">
-              <input type="checkbox" name="proofRequired" defaultChecked={state.draft.proofRequired} className="rounded border-slate-300" />
-              Require photo/video proof before this task can be marked complete
+            <label className="flex items-end gap-2 text-xs text-slate-600">
+              <input type="checkbox" name="proofRequired" defaultChecked={state.draft.proofRequired} className="mb-1 rounded border-slate-300" />
+              Require proof
             </label>
             <div className="flex gap-2 sm:col-span-2">
-              <Button type="submit">Create Task</Button>
-              <Button type="button" variant="ghost" onClick={() => setDismissed(true)}>Discard</Button>
+              <Button type="submit">Create</Button>
+              <Button type="button" variant="ghost" onClick={() => setDismissed(true)}>Cancel</Button>
             </div>
           </form>
         </div>

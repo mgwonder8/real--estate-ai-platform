@@ -1,13 +1,14 @@
 import { auth } from "@/auth";
+import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardHeader } from "@/components/ui/card";
-import { StatusPill, PriorityPill } from "@/components/ui/status-pill";
+import { PriorityPill } from "@/components/ui/status-pill";
 import { listSites } from "@/lib/data/sites";
 import { listTasks } from "@/lib/data/tasks";
 import { listStaff } from "@/lib/data/staff";
 import { isAiEnabled } from "@/lib/ai/openai";
 import { AiTaskChat } from "@/app/dashboard/ai-task-chat";
-import Link from "next/link";
+import { Clock, Loader2, CheckCircle2, ShieldCheck, ArrowRight } from "lucide-react";
 
 function isOverdue(task: { deadline: string; status: string }): boolean {
   if (!task.deadline) return false;
@@ -17,18 +18,19 @@ function isOverdue(task: { deadline: string; status: string }): boolean {
 
 export default async function DashboardPage() {
   const session = await auth();
-  const [sites, tasks, staff] = await Promise.all([listSites(), listTasks(), listStaff()]);
+  const [sites, tasks, allStaff] = await Promise.all([listSites(), listTasks(), listStaff()]);
+  const staff = allStaff.filter((s) => s.role !== "owner");
+  const staffById = Object.fromEntries(allStaff.map((s) => [s.id, s]));
 
-  const staffById = Object.fromEntries(staff.map((s) => [s.id, s]));
-
-  const totalPending = tasks.filter((t) => t.status === "pending").length;
-  const totalInProgress = tasks.filter((t) => t.status === "in_progress").length;
-  const totalCompleted = tasks.filter((t) => t.status === "completed").length;
-  const totalApproved = tasks.filter((t) => t.status === "approved").length;
+  const counts = {
+    pending: tasks.filter((t) => t.status === "pending").length,
+    inProgress: tasks.filter((t) => t.status === "in_progress").length,
+    completed: tasks.filter((t) => t.status === "completed").length,
+    approved: tasks.filter((t) => t.status === "approved").length,
+  };
 
   const perSite = sites.map((site) => {
     const siteTasks = tasks.filter((t) => t.siteId === site.id);
-    const siteStaff = staff.filter((s) => s.siteId === site.id && s.role === "site_staff");
     const outstanding = siteTasks
       .filter((t) => t.status === "pending" || t.status === "in_progress")
       .sort((a, b) => {
@@ -38,116 +40,103 @@ export default async function DashboardPage() {
       });
     return {
       site,
-      staffCount: siteStaff.length,
-      pending: siteTasks.filter((t) => t.status === "pending").length,
-      inProgress: siteTasks.filter((t) => t.status === "in_progress").length,
-      awaitingApproval: siteTasks.filter((t) => t.status === "completed").length,
-      approved: siteTasks.filter((t) => t.status === "approved").length,
-      overdueCount: siteTasks.filter(isOverdue).length,
+      total: siteTasks.length,
+      overdue: siteTasks.filter(isOverdue).length,
+      awaiting: siteTasks.filter((t) => t.status === "completed").length,
       outstanding,
     };
   });
 
   return (
     <AppShell role={session!.user.role} name={session!.user.name}>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">Portfolio Overview</h1>
-          <p className="text-sm text-slate-500">Real-time status across {sites.length} site{sites.length === 1 ? "" : "s"}.</p>
-        </div>
-        <Link href="/tasks" className="text-sm font-medium text-brand-navy hover:underline">
-          Go to task board &rarr;
-        </Link>
+      <div className="mb-5">
+        <h1 className="text-xl font-semibold text-slate-900">Dashboard</h1>
+        <p className="text-sm text-slate-500">Everything happening across your sites.</p>
       </div>
 
-      <Card className="mb-6">
-        <CardHeader
-          title="Quick Add via Chat"
-          subtitle="Type an instruction like normal — AI drafts the task, you confirm before it's created."
-        />
-        <div className="px-5 py-5">
+      {/* AI chat — compact */}
+      <Card className="mb-5">
+        <CardHeader title="Tell your task" />
+        <div className="px-5 py-4">
           {isAiEnabled() ? (
             <AiTaskChat sites={sites} staff={staff} />
           ) : (
             <p className="text-sm text-slate-500">
-              AI task parsing isn&apos;t configured yet (missing <code className="rounded bg-slate-100 px-1">OPENAI_API_KEY</code>).
-              Use the full form on the <Link href="/tasks" className="text-brand-navy hover:underline">Tasks</Link> page instead.
+              AI isn&apos;t configured. Use{" "}
+              <Link href="/tasks/new" className="text-brand-navy hover:underline">
+                New Task
+              </Link>{" "}
+              instead.
             </p>
           )}
         </div>
       </Card>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <SummaryCard label="Pending" value={totalPending} />
-        <SummaryCard label="In Progress" value={totalInProgress} />
-        <SummaryCard label="Awaiting Approval" value={totalCompleted} />
-        <SummaryCard label="Approved" value={totalApproved} />
+      {/* Compact stat strip */}
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat icon={Clock} label="Pending" value={counts.pending} tone="slate" />
+        <Stat icon={Loader2} label="In Progress" value={counts.inProgress} tone="amber" />
+        <Stat icon={CheckCircle2} label="Awaiting" value={counts.completed} tone="blue" />
+        <Stat icon={ShieldCheck} label="Approved" value={counts.approved} tone="emerald" />
       </div>
 
+      {/* Sites grid */}
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-slate-900">Site Dashboard</h2>
-        <p className="text-sm text-slate-500">What&apos;s outstanding at every site, at a glance.</p>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Sites</h2>
+        <Link href="/sites" className="text-xs font-medium text-brand-navy hover:underline">
+          View all
+        </Link>
       </div>
 
       {sites.length === 0 ? (
         <Card className="p-8 text-center text-sm text-slate-500">
-          No sites yet. Add your first site under the Sites tab to get started.
+          No sites yet. Add your first site to get started.
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {perSite.map(({ site, staffCount, pending, inProgress, awaitingApproval, approved, overdueCount, outstanding }) => (
-            <Card key={site.id}>
-              <CardHeader
-                title={site.name}
-                subtitle={`${site.address || "No address on file"} · ${staffCount} site staff`}
-                action={
-                  overdueCount > 0 ? (
-                    <span className="shrink-0 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
-                      {overdueCount} overdue
-                    </span>
-                  ) : undefined
-                }
-              />
-              <div className="space-y-3 px-5 py-4">
-                <div className="flex flex-wrap gap-2 text-xs text-slate-600">
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1">{pending} pending</span>
-                  <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">{inProgress} in progress</span>
-                  <span className="rounded-full bg-blue-100 px-2.5 py-1 text-blue-800">{awaitingApproval} awaiting approval</span>
-                  <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-800">{approved} approved</span>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {perSite.map(({ site, total, overdue, awaiting, outstanding }) => (
+            <Link
+              key={site.id}
+              href={`/sites/${site.id}`}
+              className="group rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-navy hover:shadow-md"
+            >
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate font-semibold text-slate-900 group-hover:text-brand-navy">{site.name}</p>
+                  <p className="truncate text-xs text-slate-500">{site.address || "—"}</p>
                 </div>
-
-                {outstanding.length === 0 ? (
-                  <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-                    Nothing pending — this site is caught up.
-                  </p>
-                ) : (
-                  <div className="space-y-1.5">
-                    <p className="text-xs font-medium text-slate-500">Remaining work</p>
-                    {outstanding.slice(0, 5).map((task) => (
-                      <div key={task.id} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm text-slate-800">{task.title}</p>
-                          <p className="truncate text-xs text-slate-500">
-                            {task.assigneeIds.map((id) => staffById[id]?.name ?? "Unknown").join(", ") || "Unassigned"}
-                            {task.deadline && ` · Due ${task.deadline}`}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-1.5">
-                          {isOverdue(task) && (
-                            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">Overdue</span>
-                          )}
-                          <PriorityPill priority={task.priority} />
-                          <StatusPill status={task.status} />
-                        </div>
-                      </div>
-                    ))}
-                    {outstanding.length > 5 && (
-                      <p className="pt-0.5 text-xs text-slate-500">+{outstanding.length - 5} more — see Tasks for the full list.</p>
-                    )}
-                  </div>
-                )}
+                <ArrowRight size={16} className="mt-0.5 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-navy" />
               </div>
-            </Card>
+
+              <div className="mb-3 flex flex-wrap gap-1.5 text-xs">
+                <Chip label={`${total} tasks`} tone="slate" />
+                {awaiting > 0 && <Chip label={`${awaiting} awaiting`} tone="blue" />}
+                {overdue > 0 && <Chip label={`${overdue} overdue`} tone="red" />}
+              </div>
+
+              {outstanding.length === 0 ? (
+                <p className="text-xs text-emerald-700">All caught up.</p>
+              ) : (
+                <ul className="space-y-1">
+                  {outstanding.slice(0, 3).map((t) => (
+                    <li key={t.id} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="min-w-0 flex-1 truncate text-slate-700">{t.title}</span>
+                      <span className="shrink-0 text-slate-400">
+                        {t.assigneeIds.map((id) => staffById[id]?.name?.split(" ")[0] ?? "?").join(", ")}
+                      </span>
+                      {isOverdue(t) ? (
+                        <span className="shrink-0 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700">Late</span>
+                      ) : (
+                        <PriorityPill priority={t.priority} />
+                      )}
+                    </li>
+                  ))}
+                  {outstanding.length > 3 && (
+                    <li className="pt-0.5 text-xs text-slate-400">+{outstanding.length - 3} more</li>
+                  )}
+                </ul>
+              )}
+            </Link>
           ))}
         </div>
       )}
@@ -155,11 +144,44 @@ export default async function DashboardPage() {
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+const TONES = {
+  slate: { icon: "bg-slate-100 text-slate-600", value: "text-slate-900" },
+  amber: { icon: "bg-amber-100 text-amber-700", value: "text-slate-900" },
+  blue: { icon: "bg-blue-100 text-blue-700", value: "text-slate-900" },
+  emerald: { icon: "bg-emerald-100 text-emerald-700", value: "text-slate-900" },
+} as const;
+
+function Stat({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  value: number;
+  tone: keyof typeof TONES;
+}) {
+  const t = TONES[tone];
   return (
-    <Card className="p-5">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-3xl font-semibold text-slate-900">{value}</p>
-    </Card>
+    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${t.icon}`}>
+        <Icon size={16} />
+      </span>
+      <div>
+        <p className={`text-xl font-semibold leading-none ${t.value}`}>{value}</p>
+        <p className="mt-1 text-xs text-slate-500">{label}</p>
+      </div>
+    </div>
   );
+}
+
+const CHIP_TONES = {
+  slate: "bg-slate-100 text-slate-700",
+  blue: "bg-blue-100 text-blue-700",
+  red: "bg-red-100 text-red-700",
+} as const;
+
+function Chip({ label, tone }: { label: string; tone: keyof typeof CHIP_TONES }) {
+  return <span className={`rounded-full px-2 py-0.5 ${CHIP_TONES[tone]}`}>{label}</span>;
 }

@@ -56,6 +56,15 @@ export default async function LoginPage({
           <h1 className="text-lg font-semibold text-slate-900">Welcome back</h1>
           <p className="mt-1 text-sm text-slate-500">Sign in to continue</p>
 
+          <details className="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+            <summary className="cursor-pointer font-medium text-slate-700">Demo logins</summary>
+            <div className="mt-2 space-y-1">
+              <p><span className="font-medium">Owners:</span> Rahul@owner.com · Kedar@owner.com</p>
+              <p><span className="font-medium">Staff:</span> Vinayak@staff.com · ganesh@staff.com</p>
+              <p className="text-slate-500">Password: milleniumgroup</p>
+            </div>
+          </details>
+
           <form action={login} className="mt-6 space-y-4">
             {error && (
               <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-inset ring-red-200">
