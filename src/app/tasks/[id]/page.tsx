@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Building2, CalendarDays, Camera, Check, Link2, MapPin, Paperclip, Play, UserRound } from "lucide-react";
+import { Building2, CalendarDays, Camera, Check, FileText, Link2, MapPin, Paperclip, Play, UserRound } from "lucide-react";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
@@ -136,18 +136,58 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
             <Card className="p-5">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Details</p>
               {task.brief && <p className="whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{task.brief}</p>}
-              <div className="mt-3 flex flex-wrap gap-2">
-                {task.resourceLink && (
+              {task.resourceLink && (
+                <div className="mt-3">
                   <a href={task.resourceLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-brand-navy ring-1 ring-slate-200 hover:bg-slate-100">
                     <Link2 size={14} /> Open link
                   </a>
-                )}
-                {task.resourceFileUrl && (
-                  <a href={task.resourceFileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-brand-navy ring-1 ring-slate-200 hover:bg-slate-100">
-                    <Paperclip size={14} /> {task.resourceFileName || "File"}
-                  </a>
-                )}
-              </div>
+                </div>
+              )}
+            </Card>
+          )}
+
+          {(task.resourceFileUrl || proofs.length > 0) && (
+            <Card className="p-5">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Files &amp; photos</p>
+
+              {task.resourceFileUrl && (
+                <div className="mb-5">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    Reference from {nameOf(task.createdBy)}
+                  </p>
+                  <AttachmentPreview url={task.resourceFileUrl} name={task.resourceFileName || "Reference file"} />
+                </div>
+              )}
+
+              {proofs.length > 0 && (
+                <div>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    Proof photos &amp; videos ({proofs.length})
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {proofs.map((p) => (
+                      <a
+                        key={p.id}
+                        href={p.photoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative overflow-hidden rounded-xl ring-1 ring-slate-200"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={p.photoUrl}
+                          alt={`Proof by ${nameOf(p.submittedBy)}`}
+                          className="aspect-square w-full object-cover transition group-hover:scale-105"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5 text-[10px] text-white">
+                          <p className="truncate font-medium">{nameOf(p.submittedBy)}</p>
+                          <p className="truncate opacity-80">{timeAgo(p.submittedAt)}</p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Card>
           )}
 
@@ -271,5 +311,37 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
       </span>
       <span className="font-medium text-slate-800">{value}</span>
     </div>
+  );
+}
+
+function AttachmentPreview({ url, name }: { url: string; name: string }) {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  const isImage = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif"].includes(ext);
+
+  if (isImage) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-xl ring-1 ring-slate-200">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt={name} className="max-h-72 w-full object-cover" />
+      </a>
+    );
+  }
+
+  const isPdf = ext === "pdf";
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200 transition hover:bg-slate-100"
+    >
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${isPdf ? "bg-red-100 text-red-700" : "bg-slate-200 text-slate-600"}`}>
+        {isPdf ? <FileText size={20} /> : <Paperclip size={20} />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium text-slate-800">{name}</span>
+        <span className="text-xs text-slate-500">Tap to open</span>
+      </span>
+    </a>
   );
 }

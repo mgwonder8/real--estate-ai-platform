@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { saveProofFile } from "@/lib/storage/upload";
+import { saveUploadedFile } from "@/lib/storage/upload";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   if (file.size > 20 * 1024 * 1024) return NextResponse.json({ error: "File too large (20 MB max)" }, { status: 400 });
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const uploaded = await saveProofFile({ name: file.name, buffer });
+  const uploaded = await saveUploadedFile({ name: file.name, buffer }, "chat");
 
   return NextResponse.json({
     url: uploaded.url,

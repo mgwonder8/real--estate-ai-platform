@@ -8,6 +8,7 @@ import { DueBadge, PriorityPill } from "@/components/ui/status-pill";
 import { listTasksForAssignee } from "@/lib/data/tasks";
 import { getSite } from "@/lib/data/sites";
 import { listAllTaskComments } from "@/lib/data/task-comments";
+import { listAllProofs } from "@/lib/data/proofs";
 import { listQueriesRaisedBy } from "@/lib/data/queries";
 import { STATUS_META, firstName, sortByUrgency, timeAgo } from "@/lib/task-meta";
 import { updateOwnTaskStatusAction, addOwnTaskCommentAction } from "@/app/site/actions";
@@ -22,10 +23,11 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
   const session = await auth();
   const { tab } = await searchParams;
 
-  const [tasks, site, comments, queries] = await Promise.all([
+  const [tasks, site, comments, allProofs, queries] = await Promise.all([
     listTasksForAssignee(session!.user.id),
     session!.user.siteId ? getSite(session!.user.siteId) : Promise.resolve(null),
     listAllTaskComments(),
+    listAllProofs(),
     listQueriesRaisedBy(session!.user.id),
   ]);
 
@@ -66,7 +68,9 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
           )}
           {visible.map((task) => {
             const taskComments = comments.filter((c) => c.taskId === task.id);
+            const taskProofs = allProofs.filter((p) => p.taskId === task.id);
             const canWork = task.status === "pending" || task.status === "in_progress";
+            const refIsImage = /\.(jpg|jpeg|png|gif|webp|heic|heif)$/i.test(task.resourceFileName || "");
             return (
               <Card key={task.id} className="overflow-hidden">
                 <div className={`h-1 ${STATUS_META[task.status].bar}`} />
@@ -81,18 +85,41 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
                     </div>
                   )}
                   {task.brief && <p className="mt-2 text-sm leading-relaxed text-slate-600">{task.brief}</p>}
-                  {(task.resourceLink || task.resourceFileUrl) && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {task.resourceLink && (
-                        <a href={task.resourceLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-brand-navy ring-1 ring-slate-200">
-                          <Link2 size={14} /> Link
+                  {task.resourceLink && (
+                    <div className="mt-3">
+                      <a href={task.resourceLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-brand-navy ring-1 ring-slate-200">
+                        <Link2 size={14} /> Link
+                      </a>
+                    </div>
+                  )}
+                  {task.resourceFileUrl && (
+                    <div className="mt-3">
+                      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Reference from office</p>
+                      {refIsImage ? (
+                        <a href={task.resourceFileUrl} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-xl ring-1 ring-slate-200">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={task.resourceFileUrl} alt={task.resourceFileName || "Reference"} className="max-h-48 w-full object-cover" />
                         </a>
-                      )}
-                      {task.resourceFileUrl && (
+                      ) : (
                         <a href={task.resourceFileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-brand-navy ring-1 ring-slate-200">
                           <Paperclip size={14} /> {task.resourceFileName || "File"}
                         </a>
                       )}
+                    </div>
+                  )}
+                  {taskProofs.length > 0 && (
+                    <div className="mt-3">
+                      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                        Your proofs ({taskProofs.length})
+                      </p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {taskProofs.map((p) => (
+                          <a key={p.id} href={p.photoUrl} target="_blank" rel="noopener noreferrer" className="block aspect-square overflow-hidden rounded-lg ring-1 ring-slate-200">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={p.photoUrl} alt="Proof" className="h-full w-full object-cover" />
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   )}
 
