@@ -1,10 +1,21 @@
-import { appendRow, readTable, invalidateHeaderCache } from "@/lib/google/sheet-table";
+import { appendRow, readTable, ensureTable, invalidateTable } from "@/lib/google/sheet-table";
 import { getSheetsClient } from "@/lib/google/clients";
 import { env } from "@/lib/env";
 import { newId } from "@/lib/ids";
 
 const TAB = "Messages";
-const HEADERS = ["id", "from_id", "to_id", "message", "attachment_url", "attachment_name", "attachment_type", "created_at", "read_at"];
+const HEADERS = [
+  "id",
+  "from_id",
+  "to_id",
+  "message",
+  "attachment_url",
+  "attachment_name",
+  "attachment_type",
+  "created_at",
+  "read_at",
+  "task_id",
+];
 
 export interface Message {
   id: string;
@@ -16,6 +27,7 @@ export interface Message {
   attachmentType: string;
   createdAt: string;
   readAt: string;
+  taskId: string;
 }
 
 function toMessage(data: Record<string, string>): Message {
@@ -23,52 +35,23 @@ function toMessage(data: Record<string, string>): Message {
     id: data.id,
     fromId: data.from_id,
     toId: data.to_id,
-    message: data.message,
+    message: data.message ?? "",
     attachmentUrl: data.attachment_url ?? "",
     attachmentName: data.attachment_name ?? "",
     attachmentType: data.attachment_type ?? "",
     createdAt: data.created_at,
     readAt: data.read_at ?? "",
+    taskId: data.task_id ?? "",
   };
 }
 
-async function ensureTab(): Promise<void> {
-  const sheets = getSheetsClient();
-  try {
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: env.spreadsheetId,
-      range: `${TAB}!1:1`,
-    });
-    const existingHeaders = (res.data.values?.[0] ?? []).map((h) => String(h));
-    // Ensure new columns exist (backward compat)
-    const missing = HEADERS.filter((h) => !existingHeaders.includes(h));
-    if (missing.length > 0) {
-      const merged = [...existingHeaders, ...missing];
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: env.spreadsheetId,
-        range: `${TAB}!A1`,
-        valueInputOption: "USER_ENTERED",
-        requestBody: { values: [merged] },
-      });
-      invalidateHeaderCache(TAB);
-    }
-  } catch {
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: env.spreadsheetId,
-      requestBody: { requests: [{ addSheet: { properties: { title: TAB } } }] },
-    });
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: env.spreadsheetId,
-      range: `${TAB}!A1`,
-      valueInputOption: "USER_ENTERED",
-      requestBody: { values: [HEADERS] },
-    });
-    invalidateHeaderCache(TAB);
-  }
+function ensureTab(): Promise<void> {
+  return ensureTable(TAB, HEADERS);
 }
 
-async function safeRead() {
+async function readMessages(): Promise<{ headers: string[]; rows: { rowNumber: number; data: Record<string, string> }[] }> {
   try {
+    await ensureTab();
     return await readTable(TAB);
   } catch {
     return { headers: HEADERS, rows: [] };
@@ -76,7 +59,7 @@ async function safeRead() {
 }
 
 export async function listMessagesBetween(staffIdA: string, staffIdB: string): Promise<Message[]> {
-  const { rows } = await safeRead();
+  const { rows } = await readMessages();
   return rows
     .map((r) => toMessage(r.data))
     .filter(
@@ -93,7 +76,7 @@ export async function listMessagesAfter(staffIdA: string, staffIdB: string, afte
 }
 
 export async function listConversations(myStaffId: string): Promise<{ partnerId: string; last: Message; unread: number }[]> {
-  const { rows } = await safeRead();
+  const { rows } = await readMessages();
   const all = rows.map((r) => toMessage(r.data)).filter((m) => m.fromId === myStaffId || m.toId === myStaffId);
   const byPartner = new Map<string, Message[]>();
   for (const m of all) {
@@ -111,17 +94,16 @@ export async function listConversations(myStaffId: string): Promise<{ partnerId:
 }
 
 export async function countUnread(myStaffId: string): Promise<number> {
-  const { rows } = await safeRead();
-  return rows
-    .map((r) => toMessage(r.data))
-    .filter((m) => m.toId === myStaffId && !m.readAt).length;
+  const { rows } = await readMessages();
+  return rows.filter((r) => r.data.to_id === myStaffId && !r.data.read_at).length;
 }
 
 export async function sendMessage(
   fromId: string,
   toId: string,
   message: string,
-  attachment?: { url: string; name: string; type: string }
+  attachment?: { url: string; name: string; type: string },
+  taskId?: string
 ): Promise<Message> {
   await ensureTab();
   const msg: Message = {
@@ -134,6 +116,7 @@ export async function sendMessage(
     attachmentType: attachment?.type ?? "",
     createdAt: new Date().toISOString(),
     readAt: "",
+    taskId: taskId ?? "",
   };
   await appendRow(TAB, {
     id: msg.id,
@@ -145,37 +128,30 @@ export async function sendMessage(
     attachment_type: msg.attachmentType,
     created_at: msg.createdAt,
     read_at: "",
+    task_id: msg.taskId,
   });
   return msg;
 }
 
 export async function markConversationRead(myStaffId: string, partnerStaffId: string): Promise<void> {
-  let rows;
-  try {
-    ({ rows } = await readTable(TAB));
-  } catch {
-    return;
-  }
-  const sheets = getSheetsClient();
-  const now = new Date().toISOString();
+  const { headers, rows } = await readMessages();
   const unread = rows.filter(
     (r) => r.data.from_id === partnerStaffId && r.data.to_id === myStaffId && !r.data.read_at
   );
-  if (unread.length === 0) return;
-  const { headers } = await readTable(TAB);
   const readAtIdx = headers.indexOf("read_at");
-  if (readAtIdx < 0) return;
+  if (unread.length === 0 || readAtIdx < 0) return;
+
+  const sheets = getSheetsClient();
   const col = columnLetter(readAtIdx + 1);
-  await Promise.all(
-    unread.map((r) =>
-      sheets.spreadsheets.values.update({
-        spreadsheetId: env.spreadsheetId,
-        range: `${TAB}!${col}${r.rowNumber}`,
-        valueInputOption: "USER_ENTERED",
-        requestBody: { values: [[now]] },
-      })
-    )
-  );
+  const now = new Date().toISOString();
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId: env.spreadsheetId,
+    requestBody: {
+      valueInputOption: "USER_ENTERED",
+      data: unread.map((r) => ({ range: `${TAB}!${col}${r.rowNumber}`, values: [[now]] })),
+    },
+  });
+  invalidateTable(TAB);
 }
 
 function columnLetter(count: number): string {

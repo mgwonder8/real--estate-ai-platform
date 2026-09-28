@@ -22,6 +22,14 @@ export function stripDashes(text: string): string {
   return text.replace(/\s*[\u2014\u2013]\s*/g, ", ").replace(/,\s*,/g, ",");
 }
 
+/** e.g. "Monday, 2026-09-28" in India time, so "by Friday" resolves to the right date. */
+function todayInIndia(): string {
+  const now = new Date();
+  const weekday = new Intl.DateTimeFormat("en-IN", { weekday: "long", timeZone: "Asia/Kolkata" }).format(now);
+  const ymd = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(now);
+  return `${weekday}, ${ymd}`;
+}
+
 export interface ParsedTaskDraft {
   title: string;
   brief: string;
@@ -75,7 +83,7 @@ export async function parseTaskFromChat(input: {
           "implies it (e.g. names multiple people, or says 'the team' at a site; in that case include everyone tied to that site). " +
           "If a staff member is tied to a specific site, prefer them for tasks at that site. " +
           "Default priority is 'normal' and proofRequired is true unless the instruction clearly implies otherwise. " +
-          "If today's date matters, assume it is " + new Date().toISOString().slice(0, 10) + "." + STYLE,
+          "Today is " + todayInIndia() + ". Resolve relative dates like 'Friday' or 'next week' from that." + STYLE,
       },
       {
         role: "user",

@@ -43,6 +43,6 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|icons|apple-touch-icon.png).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|icons|apple-touch-icon.png|logo.png).*)",
   ],
 };

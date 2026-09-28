@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
 import { MobileNav } from "@/components/mobile-nav";
@@ -10,25 +11,36 @@ import { signOutAction } from "@/lib/sign-out-action";
 export function AppShell({
   role,
   name,
+  unreadChats = 0,
   children,
 }: {
   role: string;
   name: string;
+  unreadChats?: number;
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isStaff = role === "site_staff";
+  const pathname = usePathname();
+  const isChatThread = /^\/chat\/[^/]+$/.test(pathname ?? "");
+  const mainPadding = isChatThread
+    ? "pb-[calc(4rem_+_env(safe-area-inset-bottom))] lg:px-8 lg:py-6"
+    : "px-4 pb-28 pt-5 sm:px-6 lg:px-8 lg:pb-10 lg:pt-8";
 
   return (
     <div className="flex min-h-screen bg-background">
-      <AppSidebar role={role} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <AppSidebar
+        role={role}
+        name={name}
+        unreadChats={unreadChats}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        signOutAction={signOutAction}
+      />
       <div className="flex min-w-0 flex-1 flex-col">
-        <AppTopbar name={name} role={role} onMenuClick={() => setSidebarOpen(true)} signOutAction={signOutAction} />
-        <main className={`mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8 ${isStaff ? "" : "pb-28 lg:pb-8"}`}>
-          {children}
-        </main>
+        <AppTopbar onMenuClick={() => setSidebarOpen(true)} />
+        <main className={`mx-auto w-full max-w-6xl flex-1 ${mainPadding}`}>{children}</main>
       </div>
-      {!isStaff && <MobileNav />}
+      <MobileNav role={role} unreadChats={unreadChats} />
       <LiveRefresh />
     </div>
   );

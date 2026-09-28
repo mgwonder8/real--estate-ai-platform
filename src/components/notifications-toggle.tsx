@@ -94,9 +94,9 @@ export function NotificationsToggle() {
   }
 
   return (
-    <button onClick={enable} title="Turn on notifications" className={`${base} relative cursor-pointer text-slate-500 hover:bg-white`}>
+    <button onClick={enable} title="Turn on notifications" className={`${base} relative cursor-pointer text-slate-500 hover:bg-slate-100`}>
       <Bell size={18} />
-      <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-gold ring-2 ring-background" />
+      <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-gold ring-2 ring-white" />
     </button>
   );
 }

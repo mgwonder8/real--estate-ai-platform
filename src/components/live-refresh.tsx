@@ -1,43 +1,34 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+
+// Chat polls on its own; forms shouldn't re-render under someone who is typing.
+const SKIP = [/^\/chat/, /\/new$/, /\/edit$/];
 
 /**
- * Polls the current route for fresh server-rendered data while the tab is
- * visible. This is a pragmatic stand-in for true real-time (websockets)
- * updates, Vercel's serverless functions don't hold persistent connections,
- * and this needs no extra infrastructure or paid service.
+ * Quietly refreshes server data while the tab is visible, and once when the
+ * user comes back to the tab. A stand-in for websockets on serverless hosting.
  */
-export function LiveRefresh({ intervalMs = 20000 }: { intervalMs?: number }) {
+export function LiveRefresh({ intervalMs = 45000 }: { intervalMs?: number }) {
   const router = useRouter();
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pathname = usePathname();
+  const skip = SKIP.some((re) => re.test(pathname ?? ""));
 
   useEffect(() => {
-    function start() {
-      if (timerRef.current) return;
-      timerRef.current = setInterval(() => {
-        if (document.visibilityState === "visible") {
-          router.refresh();
-        }
-      }, intervalMs);
+    if (skip) return;
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") router.refresh();
+    }, intervalMs);
+    function onVisible() {
+      if (document.visibilityState === "visible") router.refresh();
     }
-    function stop() {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    }
-
-    start();
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") {
-        router.refresh();
-      }
-    });
-
-    return stop;
-  }, [intervalMs, router]);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [intervalMs, router, skip]);
 
   return null;
 }

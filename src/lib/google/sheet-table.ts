@@ -21,9 +21,69 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
+type Table = { headers: string[]; rows: { rowNumber: number; data: SheetRow }[] };
+
+// Short-lived per-instance cache: one page render reads the same tabs many times
+// (listStaff, getStaff, findRowById...), and chat polling reads Messages every few seconds.
+// Writes clear the cache instantly on this instance; the TTL only bounds staleness across instances.
+const DEFAULT_TTL_MS = 15000;
+const TTL_MS: Record<string, number> = { Messages: 2500 };
+const tableCache = new Map<string, { at: number; promise: Promise<Table> }>();
+
+export function invalidateTable(tab?: string): void {
+  if (tab) tableCache.delete(tab);
+  else tableCache.clear();
+}
+
 export function invalidateHeaderCache(tab?: string): void {
   if (tab) headerCache.delete(tab);
   else headerCache.clear();
+  invalidateTable(tab);
+}
+
+const ensured = new Map<string, Promise<void>>();
+
+/** Creates the tab if it doesn't exist and appends any missing header columns. Runs once per tab per instance. */
+export function ensureTable(tab: string, headers: string[]): Promise<void> {
+  let ready = ensured.get(tab);
+  if (!ready) {
+    ready = createOrUpgradeTable(tab, headers).catch((err) => {
+      ensured.delete(tab);
+      throw err;
+    });
+    ensured.set(tab, ready);
+  }
+  return ready;
+}
+
+async function createOrUpgradeTable(tab: string, headers: string[]): Promise<void> {
+  const sheets = getSheetsClient();
+  let existing: string[] | null;
+  try {
+    const res = await sheets.spreadsheets.values.get({ spreadsheetId: env.spreadsheetId, range: `${tab}!1:1` });
+    existing = (res.data.values?.[0] ?? []).map((h) => String(h));
+  } catch {
+    existing = null;
+  }
+
+  if (existing === null) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: env.spreadsheetId,
+      requestBody: { requests: [{ addSheet: { properties: { title: tab } } }] },
+    });
+    existing = [];
+  }
+
+  const missing = headers.filter((h) => !existing!.includes(h));
+  if (missing.length > 0) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: env.spreadsheetId,
+      range: `${tab}!A1`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [[...existing, ...missing]] },
+    });
+    invalidateHeaderCache(tab);
+  }
 }
 
 async function getHeaders(sheets: ReturnType<typeof getSheetsClient>, tab: string): Promise<string[]> {
@@ -50,7 +110,16 @@ function objectToRowArray(headers: string[], obj: SheetRow): string[] {
 }
 
 /** Reads every data row of a tab. rowNumber is the 1-indexed sheet row (data starts at 2). */
-export async function readTable(tab: string): Promise<{ headers: string[]; rows: { rowNumber: number; data: SheetRow }[] }> {
+export function readTable(tab: string): Promise<Table> {
+  const hit = tableCache.get(tab);
+  if (hit && Date.now() - hit.at < (TTL_MS[tab] ?? DEFAULT_TTL_MS)) return hit.promise;
+  const promise = fetchTable(tab);
+  tableCache.set(tab, { at: Date.now(), promise });
+  promise.catch(() => tableCache.delete(tab));
+  return promise;
+}
+
+async function fetchTable(tab: string): Promise<Table> {
   const sheets = getSheetsClient();
   const headers = await getHeaders(sheets, tab);
   const res = await withRetry(() =>
@@ -77,6 +146,7 @@ export async function appendRow(tab: string, obj: SheetRow): Promise<void> {
       requestBody: { values: [objectToRowArray(headers, obj)] },
     })
   );
+  invalidateTable(tab);
 }
 
 export async function updateRow(tab: string, rowNumber: number, obj: SheetRow): Promise<void> {
@@ -90,6 +160,7 @@ export async function updateRow(tab: string, rowNumber: number, obj: SheetRow): 
       requestBody: { values: [objectToRowArray(headers, obj)] },
     })
   );
+  invalidateTable(tab);
 }
 
 export async function findRowById(tab: string, id: string): Promise<{ rowNumber: number; data: SheetRow } | null> {
@@ -107,6 +178,7 @@ export async function clearRow(tab: string, rowNumber: number): Promise<void> {
       range: `${tab}!A${rowNumber}:${columnLetter(headers.length)}${rowNumber}`,
     })
   );
+  invalidateTable(tab);
 }
 
 export async function deleteRowById(tab: string, id: string): Promise<boolean> {

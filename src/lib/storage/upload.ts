@@ -3,7 +3,7 @@ import { saveProofFileLocally } from "@/lib/storage/local-upload";
 
 export type UploadCategory = "proof" | "chat" | "resource" | "brief";
 
-/** Vercel injects env vars prefixed by the connection name — support both standard and prefixed names. */
+/** Vercel prefixes injected env vars with the connection name, so accept both forms. */
 export function blobToken(): string | undefined {
   return process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN_READ_WRITE_TOKEN;
 }
