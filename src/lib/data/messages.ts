@@ -1,7 +1,10 @@
-import { appendRow, readTable, updateRow, findRowById } from "@/lib/google/sheet-table";
+import { appendRow, readTable } from "@/lib/google/sheet-table";
+import { getSheetsClient } from "@/lib/google/clients";
+import { env } from "@/lib/env";
 import { newId } from "@/lib/ids";
 
 const TAB = "Messages";
+const HEADERS = ["id", "from_id", "to_id", "message", "created_at", "read_at"];
 
 export interface Message {
   id: string;
@@ -23,8 +26,40 @@ function toMessage(data: Record<string, string>): Message {
   };
 }
 
+/** Creates the Messages sheet tab with headers if it doesn't exist. */
+async function ensureTab(): Promise<void> {
+  const sheets = getSheetsClient();
+  try {
+    await sheets.spreadsheets.values.get({
+      spreadsheetId: env.spreadsheetId,
+      range: `${TAB}!1:1`,
+    });
+  } catch {
+    // Tab doesn't exist — create it
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: env.spreadsheetId,
+      requestBody: { requests: [{ addSheet: { properties: { title: TAB } } }] },
+    });
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: env.spreadsheetId,
+      range: `${TAB}!A1`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [HEADERS] },
+    });
+  }
+}
+
+/** Safe readTable — returns empty if tab doesn't exist yet. */
+async function safeRead() {
+  try {
+    return await readTable(TAB);
+  } catch {
+    return { headers: HEADERS, rows: [] };
+  }
+}
+
 export async function listMessagesBetween(staffIdA: string, staffIdB: string): Promise<Message[]> {
-  const { rows } = await readTable(TAB);
+  const { rows } = await safeRead();
   return rows
     .map((r) => toMessage(r.data))
     .filter(
@@ -40,9 +75,9 @@ export async function listMessagesAfter(staffIdA: string, staffIdB: string, afte
   return all.filter((m) => m.createdAt > after);
 }
 
-/** Returns the most recent message per conversation partner, for the chat list. */
+/** Returns the most recent message per conversation partner for the chat list. */
 export async function listConversations(myStaffId: string): Promise<{ partnerId: string; last: Message; unread: number }[]> {
-  const { rows } = await readTable(TAB);
+  const { rows } = await safeRead();
   const all = rows.map((r) => toMessage(r.data)).filter((m) => m.fromId === myStaffId || m.toId === myStaffId);
   const byPartner = new Map<string, Message[]>();
   for (const m of all) {
@@ -60,13 +95,14 @@ export async function listConversations(myStaffId: string): Promise<{ partnerId:
 }
 
 export async function countUnread(myStaffId: string): Promise<number> {
-  const { rows } = await readTable(TAB);
+  const { rows } = await safeRead();
   return rows
     .map((r) => toMessage(r.data))
     .filter((m) => m.toId === myStaffId && !m.readAt).length;
 }
 
 export async function sendMessage(fromId: string, toId: string, message: string): Promise<Message> {
+  await ensureTab();
   const msg: Message = {
     id: newId("msg"),
     fromId,
@@ -87,10 +123,25 @@ export async function sendMessage(fromId: string, toId: string, message: string)
 }
 
 export async function markConversationRead(myStaffId: string, partnerStaffId: string): Promise<void> {
-  const { rows } = await readTable(TAB);
+  let rows;
+  try {
+    ({ rows } = await readTable(TAB));
+  } catch {
+    return;
+  }
+  const sheets = getSheetsClient();
+  const now = new Date().toISOString();
   const unread = rows.filter(
     (r) => r.data.from_id === partnerStaffId && r.data.to_id === myStaffId && !r.data.read_at
   );
-  const now = new Date().toISOString();
-  await Promise.all(unread.map((r) => updateRow(TAB, r.rowNumber, { ...r.data, read_at: now })));
+  await Promise.all(
+    unread.map((r) =>
+      sheets.spreadsheets.values.update({
+        spreadsheetId: env.spreadsheetId,
+        range: `${TAB}!F${r.rowNumber}`,
+        valueInputOption: "USER_ENTERED",
+        requestBody: { values: [[now]] },
+      })
+    )
+  );
 }
