@@ -61,9 +61,8 @@ export function AppSidebar({
       >
         <div className="flex items-center justify-between px-5 pb-6 pt-6">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gold text-base font-bold text-brand-navy">
-              C
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Chai Labs" className="h-10 w-10 rounded-xl bg-white object-contain p-0.5" />
             <span className="leading-tight">
               <span className="block text-sm font-semibold text-white">Chai Labs</span>
               <span className="block text-[11px] text-slate-400">Real Estate</span>
