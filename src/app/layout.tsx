@@ -13,16 +13,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Chai Labs Real Estate",
-  description: "Task assignment, tracking, and proof-of-work for Chai Labs Real Estate's site portfolio.",
+  title: "Millennium Group",
+  description: "Task management and site tracking for Millennium Group Real Estate.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Chai Labs Real Estate",
+    title: "Millennium Group",
   },
   icons: {
     icon: [
+      { url: "/favicon.ico", sizes: "32x32", type: "image/x-icon" },
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
