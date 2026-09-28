@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { SendHorizontal, Loader2, Paperclip, X, FileText, Sparkles, CheckCircle2, ExternalLink } from "lucide-react";
+import { SendHorizontal, Loader2, Paperclip, X, FileText, Sparkles, CheckCircle2, ExternalLink, ClipboardCheck, CalendarDays } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { VoiceInputButton } from "@/components/voice-input-button";
 import type { Message } from "@/lib/data/messages";
@@ -25,6 +25,13 @@ function dateDivider(iso: string) {
 
 function isImage(type: string) {
   return type.startsWith("image/");
+}
+
+/** Detects the auto-generated "task assigned" confirmation message from /task. */
+function parseTaskConfirmation(msg: string): { title: string; due?: string } | null {
+  const m = msg.match(/^✅ Task assigned:\s*"(.+?)"(?:\s*[—-]\s*due\s+(\S+))?$/);
+  if (!m) return null;
+  return { title: m[1], due: m[2] };
 }
 
 interface Attachment {
@@ -179,6 +186,7 @@ export function ChatWindow({
           const showDate = dateLabel !== lastDate;
           lastDate = dateLabel;
           const hasAttachment = !!m.attachmentUrl;
+          const taskConf = parseTaskConfirmation(m.message);
           return (
             <div key={m.id}>
               {showDate && (
@@ -188,6 +196,25 @@ export function ChatWindow({
                   <div className="flex-1 h-px bg-slate-200" />
                 </div>
               )}
+              {taskConf ? (
+                <div className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
+                  {!mine && <Avatar name={partner.name} size="sm" className="mb-1 shrink-0" />}
+                  <div className="max-w-[80%] overflow-hidden rounded-2xl bg-gradient-to-br from-brand-gold/95 to-amber-400 p-0.5 shadow-md">
+                    <div className="rounded-[14px] bg-white px-3.5 py-2.5">
+                      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-brand-gold">
+                        <ClipboardCheck size={12} /> Task assigned
+                      </div>
+                      <p className="mt-1 text-sm font-semibold leading-snug text-slate-900 break-words">{taskConf.title}</p>
+                      {taskConf.due && (
+                        <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-slate-500">
+                          <CalendarDays size={11} /> Due {taskConf.due}
+                        </p>
+                      )}
+                      <p className="mt-1 text-right text-[10px] text-slate-400">{timeLabel(m.createdAt)}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <div className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
                 {!mine && <Avatar name={partner.name} size="sm" className="mb-1 shrink-0" />}
                 <div
@@ -215,7 +242,7 @@ export function ChatWindow({
                       <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${mine ? "bg-white/15" : "bg-slate-100"}`}>
                         <FileText size={16} />
                       </span>
-                      <span className="min-w-0 flex-1 truncate">
+                      <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium">{m.attachmentName}</span>
                         <span className={`block text-[10px] ${mine ? "text-slate-300" : "text-slate-400"}`}>Tap to open</span>
                       </span>
@@ -224,7 +251,7 @@ export function ChatWindow({
                   )}
                   {m.message && (
                     <div className="px-4 py-2.5">
-                      <p className="leading-relaxed whitespace-pre-wrap">{m.message}</p>
+                      <p className="leading-relaxed whitespace-pre-wrap break-words">{m.message}</p>
                       <p className={`mt-1 text-right text-[10px] ${mine ? "text-slate-300" : "text-slate-400"}`}>
                         {timeLabel(m.createdAt)}
                       </p>
@@ -237,6 +264,7 @@ export function ChatWindow({
                   )}
                 </div>
               </div>
+              )}
             </div>
           );
         })}
