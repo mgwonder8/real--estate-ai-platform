@@ -32,7 +32,7 @@ export async function saveUploadedFile(
       "[storage] BLOB_READ_WRITE_TOKEN is not set on Vercel. Uploaded files will be lost. Configure Vercel Blob."
     );
   }
-  const result = await saveProofFileLocally(file);
+  const result = await saveProofFileLocally(file, `${category}s`);
   return { url: result.url, name: file.name };
 }
 
