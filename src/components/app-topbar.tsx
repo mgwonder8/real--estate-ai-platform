@@ -55,7 +55,7 @@ export function AppTopbar({
           >
             <Avatar name={name} size="sm" />
             <span className="hidden text-left sm:block">
-              <span className="block text-sm font-medium leading-tight text-slate-800">{name}</span>
+              <span className="block text-sm font-medium leading-tight text-slate-800">{role === "owner" ? "Millennium Group" : name}</span>
               <span className="block text-xs leading-tight text-slate-400">{ROLE_LABEL[role] ?? role}</span>
             </span>
             <ChevronDown size={15} className="hidden text-slate-400 sm:block" />
@@ -64,7 +64,7 @@ export function AppTopbar({
           {menuOpen && (
             <div className="absolute right-0 top-full mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
               <div className="border-b border-slate-100 px-3 py-2 sm:hidden">
-                <p className="text-sm font-medium text-slate-800">{name}</p>
+                <p className="text-sm font-medium text-slate-800">{role === "owner" ? "Millennium Group" : name}</p>
                 <p className="text-xs text-slate-400">{ROLE_LABEL[role] ?? role}</p>
               </div>
               <form action={signOutAction}>
