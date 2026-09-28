@@ -21,6 +21,11 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
+export function invalidateHeaderCache(tab?: string): void {
+  if (tab) headerCache.delete(tab);
+  else headerCache.clear();
+}
+
 async function getHeaders(sheets: ReturnType<typeof getSheetsClient>, tab: string): Promise<string[]> {
   const cached = headerCache.get(tab);
   if (cached) return cached;

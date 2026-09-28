@@ -21,15 +21,19 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { toStaffId, message } = await req.json();
-  if (!toStaffId || !message?.trim()) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  const { toStaffId, message, attachment } = await req.json();
+  const trimmed = (message ?? "").trim();
+  if (!toStaffId || (!trimmed && !attachment?.url)) {
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
 
-  const msg = await sendMessage(session.user.id, toStaffId, message.trim());
+  const msg = await sendMessage(session.user.id, toStaffId, trimmed, attachment);
 
   const sender = await getStaff(session.user.id);
+  const bodyText = trimmed || (attachment?.name ? `📎 ${attachment.name}` : "New message");
   await notifyManyStaff([toStaffId], {
     title: `Message from ${sender?.name ?? "Someone"}`,
-    body: message.length > 80 ? message.slice(0, 80) + "…" : message,
+    body: bodyText.length > 80 ? bodyText.slice(0, 80) + "…" : bodyText,
     url: `/chat/${session.user.id}`,
   });
 

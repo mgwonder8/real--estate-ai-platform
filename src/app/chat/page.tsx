@@ -68,7 +68,8 @@ export default async function ChatPage() {
                     <span className="shrink-0 text-[11px] text-slate-400">{timeAgo(last.createdAt)}</span>
                   </div>
                   <p className={`mt-0.5 truncate text-xs ${unread ? "font-medium text-slate-700" : "text-slate-400"}`}>
-                    {mine ? "You: " : ""}{last.message}
+                    {mine ? "You: " : ""}
+                    {last.message || (last.attachmentUrl ? `📎 ${last.attachmentName}` : "")}
                   </p>
                 </div>
               </Link>
