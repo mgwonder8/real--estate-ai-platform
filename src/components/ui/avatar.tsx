@@ -29,11 +29,11 @@ const SIZES = {
   lg: "h-12 w-12 text-base",
 };
 
-export function Avatar({ name, size = "sm" }: { name: string; size?: keyof typeof SIZES }) {
+export function Avatar({ name, size = "sm", className = "" }: { name: string; size?: keyof typeof SIZES; className?: string }) {
   return (
     <span
       title={name}
-      className={`inline-flex shrink-0 items-center justify-center rounded-full font-semibold ${colorFor(name)} ${SIZES[size]}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full font-semibold ${colorFor(name)} ${SIZES[size]} ${className}`}
     >
       {initialsFor(name)}
     </span>

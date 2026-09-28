@@ -10,6 +10,7 @@ import {
   MessageCircleQuestion,
   BarChart3,
   ClipboardList,
+  MessageCircle,
   Plus,
   X,
 } from "lucide-react";
@@ -19,11 +20,15 @@ export const ownerNav = [
   { href: "/tasks", label: "Tasks", icon: ListChecks },
   { href: "/sites", label: "Sites", icon: Building2 },
   { href: "/staff", label: "Team", icon: Users },
+  { href: "/chat", label: "Chat", icon: MessageCircle },
   { href: "/queries", label: "Queries", icon: MessageCircleQuestion },
   { href: "/insights", label: "Insights", icon: BarChart3 },
 ];
 
-export const siteStaffNav = [{ href: "/site", label: "My tasks", icon: ClipboardList }];
+export const siteStaffNav = [
+  { href: "/site", label: "My tasks", icon: ClipboardList },
+  { href: "/chat", label: "Chat", icon: MessageCircle },
+];
 
 export function isActivePath(pathname: string | null, href: string) {
   if (!pathname) return false;

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ListChecks, Building2, MessageCircleQuestion, Plus } from "lucide-react";
+import { LayoutDashboard, ListChecks, Building2, MessageCircle, Plus } from "lucide-react";
 import { isActivePath } from "@/components/app-sidebar";
 
 const items = [
@@ -10,7 +10,7 @@ const items = [
   { href: "/tasks", label: "Tasks", icon: ListChecks },
   { href: "/tasks/new", label: "New", icon: Plus, primary: true },
   { href: "/sites", label: "Sites", icon: Building2 },
-  { href: "/queries", label: "Queries", icon: MessageCircleQuestion },
+  { href: "/chat", label: "Chat", icon: MessageCircle },
 ];
 
 export function MobileNav() {
