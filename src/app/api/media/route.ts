@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { get } from "@vercel/blob";
 import { auth } from "@/auth";
+import { blobToken, blobStoreId } from "@/lib/storage/upload";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -10,14 +11,24 @@ export async function GET(req: NextRequest) {
 
   const blobUrl = req.nextUrl.searchParams.get("u");
   const originalName = req.nextUrl.searchParams.get("n") ?? "";
-  const disposition = req.nextUrl.searchParams.get("d"); // "attachment" to force download
+  const disposition = req.nextUrl.searchParams.get("d");
 
   if (!blobUrl || !blobUrl.includes(".blob.vercel-storage.com")) {
     return NextResponse.json({ error: "Invalid media reference" }, { status: 400 });
   }
 
+  const token = blobToken();
+  const storeId = blobStoreId();
+  if (!token) {
+    return NextResponse.json({ error: "Blob storage not configured" }, { status: 500 });
+  }
+
   try {
-    const result = await get(blobUrl, { access: "private" });
+    const result = await get(blobUrl, {
+      access: "private",
+      token,
+      ...(storeId ? { storeId } : {}),
+    });
     if (!result || result.statusCode !== 200 || !result.stream) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
