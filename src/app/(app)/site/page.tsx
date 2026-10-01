@@ -167,7 +167,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
     <div className="mx-auto max-w-3xl">
       <div className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          {greetingIST()}, {greetingName(session!.user.name, session!.user.role)}
+          {greetingIST()}, {greetingName(session!.user.name)}
         </h1>
         {mySiteIds.length > 0 && (
           <p className="mt-0.5 text-sm text-slate-500">{mySiteIds.map((id) => siteById[id]?.name).filter(Boolean).join(" · ")}</p>

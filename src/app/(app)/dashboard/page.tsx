@@ -52,7 +52,7 @@ export default async function DashboardPage() {
         <div className="relative">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">{today}</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-            {greetingIST()}, {greetingName(session?.user.name, session?.user.role ?? "")}
+            {greetingIST()}, {greetingName(session?.user.name)}
           </h1>
           <p className="mb-5 mt-5 text-sm font-medium text-brand-gold">Tell your task</p>
           {isAiEnabled() ? (

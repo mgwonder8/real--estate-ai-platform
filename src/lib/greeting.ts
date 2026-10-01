@@ -6,8 +6,7 @@ export function greetingIST(now = new Date()): string {
   return "Good evening";
 }
 
-/** The name in the greeting: first name for staff, "Millennium" for the owner account. */
-export function greetingName(name: string | undefined, role: string): string {
-  if (role === "owner") return "Millennium";
+/** The name in the greeting: everyone's own first name, owner or staff. */
+export function greetingName(name: string | undefined): string {
   return (name ?? "").trim().split(/\s+/)[0] || "there";
 }
