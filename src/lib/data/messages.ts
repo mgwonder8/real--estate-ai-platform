@@ -15,7 +15,15 @@ const HEADERS = [
   "created_at",
   "read_at",
   "task_id",
+  "channel",
 ];
+
+/** "personal" threads are private between two people and kept apart from team chat. */
+export type Channel = "team" | "personal";
+
+export function parseChannel(value: unknown): Channel {
+  return value === "personal" ? "personal" : "team";
+}
 
 export interface Message {
   id: string;
@@ -28,6 +36,7 @@ export interface Message {
   createdAt: string;
   readAt: string;
   taskId: string;
+  channel: Channel;
 }
 
 function toMessage(data: Record<string, string>): Message {
@@ -42,6 +51,7 @@ function toMessage(data: Record<string, string>): Message {
     createdAt: data.created_at,
     readAt: data.read_at ?? "",
     taskId: data.task_id ?? "",
+    channel: parseChannel(data.channel),
   };
 }
 
@@ -58,26 +68,31 @@ async function readMessages(): Promise<{ headers: string[]; rows: { rowNumber: n
   }
 }
 
-export async function listMessagesBetween(staffIdA: string, staffIdB: string): Promise<Message[]> {
+export async function listMessagesBetween(staffIdA: string, staffIdB: string, channel: Channel = "team"): Promise<Message[]> {
   const { rows } = await readMessages();
   return rows
     .map((r) => toMessage(r.data))
     .filter(
       (m) =>
-        (m.fromId === staffIdA && m.toId === staffIdB) ||
-        (m.fromId === staffIdB && m.toId === staffIdA)
+        m.channel === channel &&
+        ((m.fromId === staffIdA && m.toId === staffIdB) || (m.fromId === staffIdB && m.toId === staffIdA))
     )
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
-export async function listMessagesAfter(staffIdA: string, staffIdB: string, after: string): Promise<Message[]> {
-  const all = await listMessagesBetween(staffIdA, staffIdB);
+export async function listMessagesAfter(staffIdA: string, staffIdB: string, after: string, channel: Channel = "team"): Promise<Message[]> {
+  const all = await listMessagesBetween(staffIdA, staffIdB, channel);
   return all.filter((m) => m.createdAt > after);
 }
 
-export async function listConversations(myStaffId: string): Promise<{ partnerId: string; last: Message; unread: number }[]> {
+export async function listConversations(
+  myStaffId: string,
+  channel: Channel = "team"
+): Promise<{ partnerId: string; last: Message; unread: number }[]> {
   const { rows } = await readMessages();
-  const all = rows.map((r) => toMessage(r.data)).filter((m) => m.fromId === myStaffId || m.toId === myStaffId);
+  const all = rows
+    .map((r) => toMessage(r.data))
+    .filter((m) => m.channel === channel && (m.fromId === myStaffId || m.toId === myStaffId));
   const byPartner = new Map<string, Message[]>();
   for (const m of all) {
     const partner = m.fromId === myStaffId ? m.toId : m.fromId;
@@ -93,9 +108,13 @@ export async function listConversations(myStaffId: string): Promise<{ partnerId:
     .sort((a, b) => b.last.createdAt.localeCompare(a.last.createdAt));
 }
 
-export async function countUnread(myStaffId: string): Promise<number> {
+export async function countUnread(myStaffId: string): Promise<Record<Channel, number>> {
   const { rows } = await readMessages();
-  return rows.filter((r) => r.data.to_id === myStaffId && !r.data.read_at).length;
+  const counts: Record<Channel, number> = { team: 0, personal: 0 };
+  for (const r of rows) {
+    if (r.data.to_id === myStaffId && !r.data.read_at) counts[parseChannel(r.data.channel)] += 1;
+  }
+  return counts;
 }
 
 export async function sendMessage(
@@ -103,9 +122,15 @@ export async function sendMessage(
   toId: string,
   message: string,
   attachment?: { url: string; name: string; type: string },
-  taskId?: string
+  taskId?: string,
+  channel: Channel = "team"
 ): Promise<Message> {
   await ensureTab();
+  if (channel === "personal") {
+    const { headers } = await readTable(TAB);
+    // Without the column a private message would be stored as a team message.
+    if (!headers.includes("channel")) throw new Error("Private chat is not ready yet, please try again");
+  }
   const msg: Message = {
     id: newId("msg"),
     fromId,
@@ -117,6 +142,7 @@ export async function sendMessage(
     createdAt: new Date().toISOString(),
     readAt: "",
     taskId: taskId ?? "",
+    channel,
   };
   await appendRow(TAB, {
     id: msg.id,
@@ -129,14 +155,19 @@ export async function sendMessage(
     created_at: msg.createdAt,
     read_at: "",
     task_id: msg.taskId,
+    channel: msg.channel === "personal" ? "personal" : "",
   });
   return msg;
 }
 
-export async function markConversationRead(myStaffId: string, partnerStaffId: string): Promise<void> {
+export async function markConversationRead(myStaffId: string, partnerStaffId: string, channel: Channel = "team"): Promise<void> {
   const { headers, rows } = await readMessages();
   const unread = rows.filter(
-    (r) => r.data.from_id === partnerStaffId && r.data.to_id === myStaffId && !r.data.read_at
+    (r) =>
+      r.data.from_id === partnerStaffId &&
+      r.data.to_id === myStaffId &&
+      !r.data.read_at &&
+      parseChannel(r.data.channel) === channel
   );
   const readAtIdx = headers.indexOf("read_at");
   if (unread.length === 0 || readAtIdx < 0) return;

@@ -14,13 +14,14 @@ import {
   Plus,
   X,
   LogOut,
+  Lock,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { NotificationsToggle } from "@/components/notifications-toggle";
 import { ROLE_LABEL, displayName } from "@/lib/roles";
 
-export type NavItem = { href: string; label: string; icon: LucideIcon; badge?: "chat" };
+export type NavItem = { href: string; label: string; icon: LucideIcon; badge?: "chat" | "personal" };
 export type NavGroup = { title?: string; items: NavItem[] };
 
 export const ownerNav: NavGroup[] = [
@@ -34,7 +35,8 @@ export const ownerNav: NavGroup[] = [
   {
     title: "People",
     items: [
-      { href: "/chat", label: "Chat", icon: MessageCircle, badge: "chat" },
+      { href: "/chat", label: "Team chat", icon: MessageCircle, badge: "chat" },
+      { href: "/personal", label: "Personal", icon: Lock, badge: "personal" },
       { href: "/staff", label: "Team", icon: Users },
       { href: "/queries", label: "Queries", icon: MessageCircleQuestion },
     ],
@@ -49,7 +51,8 @@ export const siteStaffNav: NavGroup[] = [
   {
     items: [
       { href: "/site", label: "My tasks", icon: ClipboardList },
-      { href: "/chat", label: "Chat", icon: MessageCircle, badge: "chat" },
+      { href: "/chat", label: "Team chat", icon: MessageCircle, badge: "chat" },
+      { href: "/personal", label: "Personal", icon: Lock, badge: "personal" },
     ],
   },
 ];
@@ -72,6 +75,7 @@ export function AppSidebar({
   role,
   name,
   unreadChats,
+  unreadPersonal,
   open,
   onClose,
   signOutAction,
@@ -79,6 +83,7 @@ export function AppSidebar({
   role: string;
   name: string;
   unreadChats: number;
+  unreadPersonal: number;
   open: boolean;
   onClose: () => void;
   signOutAction: () => Promise<void>;
@@ -132,7 +137,7 @@ export function AppSidebar({
                 {group.items.map((item) => {
                   const active = isActivePath(pathname, item.href);
                   const Icon = item.icon;
-                  const count = item.badge === "chat" ? unreadChats : 0;
+                  const count = item.badge === "chat" ? unreadChats : item.badge === "personal" ? unreadPersonal : 0;
                   return (
                     <Link
                       key={item.href}

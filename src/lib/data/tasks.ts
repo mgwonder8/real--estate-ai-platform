@@ -1,20 +1,22 @@
-import { appendRow, readTable, updateRow, findRowById } from "@/lib/google/sheet-table";
+import { appendRow, readTable, updateRow, findRowById, ensureTable } from "@/lib/google/sheet-table";
 import { newId } from "@/lib/ids";
 import { addTaskUpdate } from "@/lib/data/task-updates";
 import { addTaskComment } from "@/lib/data/task-comments";
 import type { Role, Task, TaskPriority, TaskStatus } from "@/lib/data/types";
 
 const TAB = "Tasks";
+const PRIORITIES: TaskPriority[] = ["low", "normal", "high", "urgent"];
 
 function toTask(data: Record<string, string>): Task {
   return {
     id: data.id,
+    serial: Number(data.serial) || 0,
     title: data.title,
     brief: data.brief,
     siteId: data.site_id,
     assigneeIds: (data.assignee_id ?? "").split(",").map((s) => s.trim()).filter(Boolean),
     createdBy: data.created_by,
-    priority: (data.priority as TaskPriority) || "normal",
+    priority: PRIORITIES.includes(data.priority as TaskPriority) ? (data.priority as TaskPriority) : "normal",
     deadline: data.deadline,
     status: (data.status as TaskStatus) || "pending",
     proofRequired: data.proof_required === "TRUE" || data.proof_required === "true",
@@ -28,14 +30,22 @@ function toTask(data: Record<string, string>): Task {
   };
 }
 
+// Rows created before serials existed are numbered by creation order. New rows always get
+// max(serial, row count) + 1, so those fallback numbers never collide with stored ones.
+function withSerials(tasks: Task[]): Task[] {
+  const oldestFirst = [...tasks].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const fallback = new Map(oldestFirst.map((t, i) => [t.id, i + 1]));
+  return tasks.map((t) => (t.serial ? t : { ...t, serial: fallback.get(t.id) ?? 0 }));
+}
+
 export async function listTasks(): Promise<Task[]> {
   const { rows } = await readTable(TAB);
-  return rows.map((r) => toTask(r.data)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return withSerials(rows.map((r) => toTask(r.data))).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function getTask(id: string): Promise<Task | null> {
-  const row = await findRowById(TAB, id);
-  return row ? toTask(row.data) : null;
+  const all = await listTasks();
+  return all.find((t) => t.id === id) ?? null;
 }
 
 export async function listTasksForAssignee(assigneeId: string): Promise<Task[]> {
@@ -61,9 +71,13 @@ export async function createTask(input: {
   resourceFileUrl?: string;
   resourceFileName?: string;
 }): Promise<Task> {
+  await ensureTable(TAB, ["serial"]);
+  const { rows } = await readTable(TAB);
+  const serial = Math.max(rows.length, ...rows.map((r) => Number(r.data.serial) || 0)) + 1;
   const now = new Date().toISOString();
   const task: Task = {
     id: newId("task"),
+    serial,
     title: input.title,
     brief: input.brief,
     siteId: input.siteId,
@@ -83,6 +97,7 @@ export async function createTask(input: {
   };
   await appendRow(TAB, {
     id: task.id,
+    serial: String(task.serial),
     title: task.title,
     brief: task.brief,
     site_id: task.siteId,

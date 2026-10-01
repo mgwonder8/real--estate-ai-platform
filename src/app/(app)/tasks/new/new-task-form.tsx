@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { inputClass } from "@/components/ui/field";
 import { AssigneePicker } from "@/components/assignee-picker";
+import { UrgencyPicker } from "@/components/urgency-picker";
 import { VoiceInputButton } from "@/components/voice-input-button";
 import { createTaskAction } from "@/app/(app)/tasks/actions";
 import type { Site, Staff, TaskPriority } from "@/lib/data/types";
@@ -24,11 +25,6 @@ const QUICK_DATES = [
   { label: "1 week", days: 7 },
 ];
 
-const PRIORITIES: { value: TaskPriority; label: string; dot: string }[] = [
-  { value: "low", label: "Low", dot: "bg-slate-300" },
-  { value: "normal", label: "Normal", dot: "bg-sky-500" },
-  { value: "urgent", label: "Urgent", dot: "bg-red-500" },
-];
 
 export function NewTaskForm({
   sites,
@@ -51,7 +47,7 @@ export function NewTaskForm({
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const missing = !title.trim() ? "Add a title" : !siteId ? "Pick a site" : assignees.length === 0 ? "Pick who does it" : null;
+  const missing = !title.trim() ? "Add a task name" : !siteId ? "Pick a site" : assignees.length === 0 ? "Pick who does it" : null;
 
   function pickSite(id: string) {
     setSiteId(id);
@@ -81,7 +77,7 @@ export function NewTaskForm({
       <input type="hidden" name="deadline" value={deadline} />
 
       <Card className="p-5">
-        <Step n={1} label="What needs to be done?" done={!!title.trim()} />
+        <Step n={1} label="Task name" done={!!title.trim()} />
         <div className="flex items-center gap-2">
           <input
             name="title"
@@ -94,13 +90,12 @@ export function NewTaskForm({
           />
           <VoiceInputButton size="lg" onTranscribed={(t) => setTitle(t)} />
         </div>
-        <textarea
+        <input
           name="brief"
           value={brief}
           onChange={(e) => setBrief(e.target.value)}
-          rows={2}
-          placeholder="Extra details (optional)"
-          className={`${inputClass} mt-2 resize-none`}
+          placeholder="Remark, one line (optional)"
+          className={`${inputClass} mt-2`}
         />
       </Card>
 
@@ -140,22 +135,8 @@ export function NewTaskForm({
       <Card className="p-5">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
-            <p className="mb-2 text-sm font-medium text-slate-800">Priority</p>
-            <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
-              {PRIORITIES.map((p) => (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => setPriority(p.value)}
-                  className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition ${
-                    priority === p.value ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  <span className={`h-2 w-2 rounded-full ${p.dot}`} />
-                  {p.label}
-                </button>
-              ))}
-            </div>
+            <p className="mb-2 text-sm font-medium text-slate-800">Urgency</p>
+            <UrgencyPicker value={priority} onChange={setPriority} />
           </div>
           <div>
             <p className="mb-2 text-sm font-medium text-slate-800">Due</p>

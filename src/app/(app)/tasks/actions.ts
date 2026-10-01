@@ -1,13 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { auth } from "@/auth";
 import { createTask, updateTaskStatus, approveTask, requestTaskChanges, getTask } from "@/lib/data/tasks";
 import { addTaskComment } from "@/lib/data/task-comments";
 import { saveProofFile } from "@/lib/storage/upload";
 import { listOfficeAndOwnerStaffIds } from "@/lib/data/staff";
 import { notifyManyStaff } from "@/lib/push/send";
-import type { TaskPriority, TaskStatus } from "@/lib/data/types";
+import { nextCheckStatus } from "@/lib/task-meta";
+import type { Role, TaskPriority, TaskStatus } from "@/lib/data/types";
 
 function revalidateTaskPaths() {
   revalidatePath("/tasks", "layout");
@@ -55,6 +57,43 @@ export async function createTaskAction(formData: FormData) {
     title: "New task assigned",
     body: title,
     url: "/site",
+  });
+}
+
+/**
+ * The task checkbox. Site staff tick their own work in for approval (or untick it);
+ * the owner and office tick a task straight to done, or untick to reopen it.
+ */
+export async function toggleTaskDoneAction(taskId: string): Promise<void> {
+  const session = await auth();
+  if (!session?.user) throw new Error("Not authenticated");
+  const me = session.user.id;
+  const role = session.user.role as Role;
+
+  const task = await getTask(taskId);
+  if (!task) throw new Error("Task not found");
+  if (role === "site_staff" && !task.assigneeIds.includes(me)) {
+    throw new Error("You can only tick off your own tasks");
+  }
+
+  const next = nextCheckStatus(task.status, role);
+  if (!next) throw new Error("This task is already approved");
+
+  if (next === "approved") {
+    await approveTask({ taskId, approvedBy: me, approverRole: role });
+  } else {
+    await updateTaskStatus({ taskId, toStatus: next, changedBy: me });
+  }
+
+  revalidateTaskPaths();
+
+  after(async () => {
+    if (next === "completed") {
+      const recipients = await listOfficeAndOwnerStaffIds();
+      await notifyManyStaff(recipients, { title: "Task done, awaiting approval", body: task.title, url: `/tasks/${taskId}` });
+    } else if (next === "approved") {
+      await notifyManyStaff(task.assigneeIds.filter((id) => id !== me), { title: "Task approved", body: task.title, url: "/site" });
+    }
   });
 }
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { inputClass } from "@/components/ui/field";
 import { VoiceInputButton } from "@/components/voice-input-button";
 import { AssigneePicker } from "@/components/assignee-picker";
+import { UrgencyPicker } from "@/components/urgency-picker";
 import { parseTaskChatAction, type ChatParseState } from "@/app/(app)/dashboard/actions";
 import { createTaskAction } from "@/app/(app)/tasks/actions";
 import type { Site, Staff, TaskPriority } from "@/lib/data/types";
@@ -151,19 +152,8 @@ function DraftCard({
       <AssigneePicker staff={staff} sites={sites} siteId={siteId} selected={assignees} onChange={setAssignees} />
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex gap-1 rounded-xl bg-slate-100 p-1">
-          {(["low", "normal", "urgent"] as const).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPriority(p)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition ${
-                priority === p ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
+        <div className="w-full sm:w-80">
+          <UrgencyPicker value={priority} onChange={setPriority} compact />
         </div>
         <input
           name="deadline"

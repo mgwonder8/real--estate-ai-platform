@@ -10,18 +10,14 @@ import { listTasks } from "@/lib/data/tasks";
 import { listStaff } from "@/lib/data/staff";
 import { listAllQueries } from "@/lib/data/queries";
 import { isAiEnabled } from "@/lib/ai/openai";
-import { isOpen, isOverdue, sortByUrgency, statusCounts, firstName } from "@/lib/task-meta";
+import { isOpen, isOverdue, sortByUrgency, statusCounts, firstName, serialLabel } from "@/lib/task-meta";
+import { assignerName } from "@/lib/roles";
+import { greetingIST, greetingName } from "@/lib/greeting";
+import { auth } from "@/auth";
 import { AiTaskChat } from "@/app/(app)/dashboard/ai-task-chat";
 
-function greeting(): string {
-  const hour = Number(new Intl.DateTimeFormat("en-IN", { hour: "numeric", hour12: false, timeZone: "Asia/Kolkata" }).format(new Date()));
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
-}
-
 export default async function DashboardPage() {
-  const [sites, tasks, allStaff, queries] = await Promise.all([listSites(), listTasks(), listStaff(), listAllQueries()]);
+  const [session, sites, tasks, allStaff, queries] = await Promise.all([auth(), listSites(), listTasks(), listStaff(), listAllQueries()]);
   const staff = allStaff.filter((s) => s.role !== "owner" && s.active);
   const staffById = Object.fromEntries(allStaff.map((s) => [s.id, s]));
   const siteById = Object.fromEntries(sites.map((s) => [s.id, s]));
@@ -43,10 +39,10 @@ export default async function DashboardPage() {
     .sort((a, b) => b.open - a.open);
 
   const tiles = [
-    { key: "pending", label: "To do", value: counts.pending, icon: ListTodo, tone: "from-slate-50 to-white text-slate-700", iconTone: "bg-slate-200/70 text-slate-700" },
-    { key: "in_progress", label: "In progress", value: counts.in_progress, icon: Clock, tone: "from-amber-50 to-white text-amber-800", iconTone: "bg-amber-100 text-amber-700" },
-    { key: "completed", label: "Needs review", value: counts.completed, icon: Hourglass, tone: "from-violet-50 to-white text-violet-800", iconTone: "bg-violet-100 text-violet-700" },
-    { key: "approved", label: "Done", value: counts.approved, icon: CheckCircle2, tone: "from-emerald-50 to-white text-emerald-800", iconTone: "bg-emerald-100 text-emerald-700" },
+    { key: "open", label: "Open", value: counts.pending + counts.in_progress, icon: ListTodo, tone: "from-sky-50 to-white text-sky-800", iconTone: "bg-sky-100 text-sky-700" },
+    { key: "late", label: "Late", value: late.length, icon: Clock, tone: "from-red-50 to-white text-red-700", iconTone: "bg-red-100 text-red-600" },
+    { key: "review", label: "Awaiting approval", value: counts.completed, icon: Hourglass, tone: "from-emerald-50/60 to-white text-emerald-700", iconTone: "bg-emerald-50 text-emerald-600" },
+    { key: "done", label: "Done", value: counts.approved, icon: CheckCircle2, tone: "from-emerald-50 to-white text-emerald-800", iconTone: "bg-emerald-100 text-emerald-700" },
   ];
 
   return (
@@ -56,7 +52,7 @@ export default async function DashboardPage() {
         <div className="relative">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">{today}</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-            {greeting()}, Millennium
+            {greetingIST()}, {greetingName(session?.user.name, session?.user.role ?? "")}
           </h1>
           <p className="mb-5 mt-5 text-sm font-medium text-brand-gold">Tell your task</p>
           {isAiEnabled() ? (
@@ -127,19 +123,23 @@ export default async function DashboardPage() {
                 <Link key={t.id} href={`/tasks/${t.id}`} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-slate-50">
                   <span
                     className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                      t.status === "completed" ? "bg-violet-50 text-violet-600" : "bg-red-50 text-red-600"
+                      t.status === "completed" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
                     }`}
                   >
                     {t.status === "completed" ? <Hourglass size={15} /> : <CircleAlert size={15} />}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-900">{t.title}</p>
+                    <p className="truncate text-sm font-medium text-slate-900">
+                      <span className="mr-1.5 font-mono text-xs text-slate-400">{serialLabel(t.serial)}</span>
+                      {t.title}
+                    </p>
                     <p className="truncate text-xs text-slate-500">
-                      {siteById[t.siteId]?.name} · {t.assigneeIds.map((id) => firstName(staffById[id]?.name)).join(", ")}
+                      {siteById[t.siteId]?.name} · {assignerName(staffById[t.createdBy])} to{" "}
+                      {t.assigneeIds.map((id) => firstName(staffById[id]?.name)).join(", ")}
                     </p>
                   </div>
                   {t.status === "completed" ? (
-                    <span className="shrink-0 text-xs font-medium text-violet-600">Review</span>
+                    <span className="shrink-0 text-xs font-medium text-emerald-600">Approve</span>
                   ) : (
                     <DueBadge task={t} />
                   )}

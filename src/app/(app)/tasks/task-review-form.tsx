@@ -10,8 +10,8 @@ export function TaskReviewForm({ taskId }: { taskId: string }) {
   const [comment, setComment] = useState("");
 
   return (
-    <form className="space-y-3 rounded-xl bg-violet-50/60 p-3 ring-1 ring-violet-100">
-      <p className="text-sm font-medium text-violet-900">Work is done. Check the proof and decide.</p>
+    <form className="space-y-3 rounded-xl bg-emerald-50/60 p-3 ring-1 ring-emerald-100">
+      <p className="text-sm font-medium text-emerald-900">Work is done. Check the proof and decide.</p>
       <input type="hidden" name="taskId" value={taskId} />
       <textarea
         name="comment"

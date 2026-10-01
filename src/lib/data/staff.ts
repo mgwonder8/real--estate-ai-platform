@@ -1,19 +1,21 @@
-import { appendRow, readTable, updateRow, findRowById } from "@/lib/google/sheet-table";
+import { appendRow, readTable, updateRow, findRowById, ensureTable } from "@/lib/google/sheet-table";
 import { newId } from "@/lib/ids";
 import type { Staff, Role } from "@/lib/data/types";
 
 const TAB = "Staff";
 
+function idList(value: string | undefined): string[] {
+  return (value ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 function toStaff(data: Record<string, string>): Staff {
-  const extraSiteIds = data.extra_site_ids
-    ? data.extra_site_ids.split(",").map((s) => s.trim()).filter(Boolean)
-    : [];
   return {
     id: data.id,
     name: data.name,
     role: (data.role as Role) || "site_staff",
     siteId: data.site_id,
-    extraSiteIds,
+    extraSiteIds: idList(data.extra_site_ids),
+    teamViewSiteIds: idList(data.team_view_site_ids),
     phone: data.phone,
     email: data.email,
     active: data.active === "TRUE" || data.active === "true",
@@ -23,6 +25,12 @@ function toStaff(data: Record<string, string>): Staff {
 
 export function allSiteIds(staff: Staff): string[] {
   return [staff.siteId, ...staff.extraSiteIds].filter(Boolean);
+}
+
+/** Sites where this person may see teammates' tasks: granted by the owner and still assigned. */
+export function teamViewSites(staff: Staff): string[] {
+  const assigned = allSiteIds(staff);
+  return staff.teamViewSiteIds.filter((id) => assigned.includes(id));
 }
 
 export async function listStaff(): Promise<Staff[]> {
@@ -60,6 +68,7 @@ export async function createStaff(input: {
     role: input.role,
     siteId: input.siteId ?? "",
     extraSiteIds: input.extraSiteIds ?? [],
+    teamViewSiteIds: [],
     phone: input.phone ?? "",
     email: input.email,
     active: true,
@@ -81,8 +90,9 @@ export async function createStaff(input: {
 
 export async function updateStaff(
   id: string,
-  input: { name: string; role: Role; siteId: string; extraSiteIds: string[]; phone: string }
+  input: { name: string; role: Role; siteId: string; extraSiteIds: string[]; teamViewSiteIds: string[]; phone: string }
 ): Promise<void> {
+  await ensureTable(TAB, ["team_view_site_ids"]);
   const row = await findRowById(TAB, id);
   if (!row) throw new Error(`Staff not found: ${id}`);
   await updateRow(TAB, row.rowNumber, {
@@ -91,6 +101,7 @@ export async function updateStaff(
     role: input.role,
     site_id: input.siteId,
     extra_site_ids: input.extraSiteIds.join(","),
+    team_view_site_ids: input.teamViewSiteIds.join(","),
     phone: input.phone,
   });
 }

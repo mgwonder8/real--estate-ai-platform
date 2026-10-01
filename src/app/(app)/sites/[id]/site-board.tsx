@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Avatar, AvatarStack } from "@/components/ui/avatar";
 import { DueBadge, PriorityDot } from "@/components/ui/status-pill";
-import { STATUS_META, STATUS_ORDER, firstName, sortByUrgency } from "@/lib/task-meta";
+import { STATUS_META, STATUS_ORDER, firstName, serialLabel, sortByUrgency } from "@/lib/task-meta";
+import { assignerName } from "@/lib/roles";
 import type { Staff, Task } from "@/lib/data/types";
 
 export function SiteBoard({ tasks, people, staffById }: { tasks: Task[]; people: Staff[]; staffById: Record<string, Staff> }) {
@@ -67,12 +68,14 @@ export function SiteBoard({ tasks, people, staffById }: { tasks: Task[]; people:
                     className="block rounded-xl bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.06)] ring-1 ring-slate-200/60 transition hover:-translate-y-0.5 hover:shadow-md"
                   >
                     <div className="flex items-start gap-2">
+                      <span className="mt-0.5 font-mono text-[11px] font-semibold text-slate-400">{serialLabel(t.serial)}</span>
+                      <p className="line-clamp-2 flex-1 text-sm font-medium text-slate-900">{t.title}</p>
                       <span className="mt-1.5">
                         <PriorityDot priority={t.priority} />
                       </span>
-                      <p className="line-clamp-2 flex-1 text-sm font-medium text-slate-900">{t.title}</p>
                     </div>
-                    <div className="mt-2.5 flex items-center justify-between gap-2">
+                    <p className="mt-1.5 text-[11px] text-slate-400">By {assignerName(staffById[t.createdBy])}</p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
                       <AvatarStack names={t.assigneeIds.map((id) => staffById[id]?.name ?? "?")} />
                       <DueBadge task={t} />
                     </div>

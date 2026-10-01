@@ -16,7 +16,8 @@ import { listTaskUpdatesForTask } from "@/lib/data/task-updates";
 import { listReferencesForTask } from "@/lib/data/task-references";
 import { TaskFiles, type RefFile } from "@/components/task-files";
 import { isProbablyImageUrl } from "@/lib/files";
-import { STATUS_META, STATUS_ORDER, formatDate, timeAgo } from "@/lib/task-meta";
+import { STATUS_META, STATUS_ORDER, formatDate, serialLabel, timeAgo } from "@/lib/task-meta";
+import { assignerName } from "@/lib/roles";
 import { updateTaskStatusAction } from "@/app/(app)/tasks/actions";
 import { TaskReviewForm } from "@/app/(app)/tasks/task-review-form";
 import { CommentBox } from "@/app/(app)/tasks/comment-thread";
@@ -80,12 +81,20 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
     <>
       <PageHeader
         back={site ? `/tasks?site=${site.id}` : "/tasks"}
-        title={task.title}
+        title={
+          <span>
+            <span className="mr-2 font-mono text-slate-400">{serialLabel(task.serial)}</span>
+            {task.title}
+          </span>
+        }
         subtitle={
           <span className="flex flex-wrap items-center gap-2 pt-1">
             <StatusPill status={task.status} />
-            <PriorityPill priority={task.priority} />
+            <PriorityPill priority={task.priority} still={task.status === "completed" || task.status === "approved"} />
             <DueBadge task={task} />
+            <span className="text-xs text-slate-500">
+              Assigned by <b className="font-semibold text-slate-700">{assignerName(staffById[task.createdBy])}</b>
+            </span>
           </span>
         }
       />
@@ -152,7 +161,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
           {(task.brief || task.resourceLink || task.resourceFileUrl) && (
             <Card className="p-5">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Details</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Remark</p>
               {task.brief && <p className="whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{task.brief}</p>}
               {task.resourceLink && (
                 <div className="mt-3">
@@ -201,7 +210,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 }
                 if (item.kind === "proof") {
                   return (
-                    <TimelineRow key={i} icon={<Camera size={13} className="text-violet-600" />} at={item.at}>
+                    <TimelineRow key={i} icon={<Camera size={13} className="text-emerald-600" />} at={item.at}>
                       <b className="font-medium text-slate-900">{nameOf(item.who)}</b> sent proof
                       <div className="mt-2 flex gap-3 rounded-xl bg-slate-50 p-2.5">
                         {item.photo && (
@@ -280,7 +289,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
               </div>
             </div>
             <InfoRow icon={<CalendarDays size={15} />} label="Due" value={task.deadline ? formatDate(task.deadline) : "No date"} />
-            <InfoRow icon={<UserRound size={15} />} label="Created by" value={nameOf(task.createdBy)} />
+            <InfoRow icon={<UserRound size={15} />} label="Assigned by" value={assignerName(staffById[task.createdBy])} />
             <InfoRow icon={<Camera size={15} />} label="Photo proof" value={task.proofRequired ? "Required" : "Optional"} />
           </Card>
         </div>

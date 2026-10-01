@@ -15,10 +15,11 @@ import {
   Camera,
   FolderInput,
   AlertCircle,
+  Lock,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { VoiceInputButton } from "@/components/voice-input-button";
-import type { Message } from "@/lib/data/messages";
+import type { Channel, Message } from "@/lib/data/messages";
 import type { Staff } from "@/lib/data/types";
 
 export type TaskOption = { id: string; title: string; status: string; deadline: string };
@@ -30,7 +31,7 @@ type ChatMessage = Message & { pending?: boolean };
 const STATUS_LABEL: Record<string, string> = {
   pending: "To do",
   in_progress: "In progress",
-  completed: "Needs review",
+  completed: "Awaiting approval",
   approved: "Done",
 };
 
@@ -70,6 +71,7 @@ export function ChatWindow({
   taskIndex,
   taskOptions,
   defaultTaskId,
+  channel = "team",
 }: {
   partner: Staff;
   myStaffId: string;
@@ -78,7 +80,9 @@ export function ChatWindow({
   taskIndex: Record<string, TaskOption>;
   taskOptions: TaskOption[];
   defaultTaskId: string;
+  channel?: Channel;
 }) {
+  const isPersonal = channel === "personal";
   const [messages, setMessages] = useState<ChatMessage[]>(initial);
   const [tasksById, setTasksById] = useState(taskIndex);
   const [text, setText] = useState("");
@@ -92,7 +96,7 @@ export function ChatWindow({
   const lastTimestampRef = useRef(initial.at(-1)?.createdAt ?? "");
 
   const isStaff = myRole === "site_staff";
-  const taskMode = !isStaff && text.trimStart().toLowerCase().startsWith("/task");
+  const taskMode = !isStaff && !isPersonal && text.trimStart().toLowerCase().startsWith("/task");
   const firstName = partner.name.split(" ")[0];
   const taskHref = (id: string) => (isStaff ? "/site" : `/tasks/${id}`);
 
@@ -106,7 +110,7 @@ export function ChatWindow({
       if (document.visibilityState !== "visible") return;
       try {
         const res = await fetch(
-          `/api/chat/messages?with=${partner.id}&after=${encodeURIComponent(lastTimestampRef.current)}`
+          `/api/chat/messages?with=${partner.id}&channel=${channel}&after=${encodeURIComponent(lastTimestampRef.current)}`
         );
         if (!res.ok || stopped) return;
         const data = (await res.json()) as { messages?: Message[] };
@@ -120,7 +124,7 @@ export function ChatWindow({
       clearInterval(timer);
       document.removeEventListener("visibilitychange", poll);
     };
-  }, [partner.id]);
+  }, [partner.id, channel]);
 
   function addMessages(fresh: Message[]) {
     setMessages((prev) => {
@@ -209,6 +213,7 @@ export function ChatWindow({
       createdAt: new Date().toISOString(),
       readAt: "",
       taskId: linkTask,
+      channel,
       pending: true,
     };
     setMessages((prev) => [...prev, optimistic]);
@@ -221,7 +226,7 @@ export function ChatWindow({
       const res = await fetch("/api/chat/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ toStaffId: partner.id, message: body, attachment, taskId: linkTask || undefined }),
+        body: JSON.stringify({ toStaffId: partner.id, message: body, attachment, taskId: linkTask || undefined, channel }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Message not sent");
@@ -251,11 +256,19 @@ export function ChatWindow({
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center py-12 text-center">
             <Avatar name={partner.name} size="lg" />
-            <p className="mt-3 text-sm font-medium text-slate-700">Start chatting with {firstName}</p>
-            <p className="mt-1 max-w-xs text-xs text-slate-400">
-              Photos and files you send can be saved straight to a task.
+            <p className="mt-3 text-sm font-medium text-slate-700">
+              {isPersonal ? `Private chat with ${firstName}` : `Start chatting with ${firstName}`}
             </p>
-            {!isStaff && (
+            <p className="mt-1 flex max-w-xs items-center gap-1.5 text-xs text-slate-400">
+              {isPersonal ? (
+                <>
+                  <Lock size={12} /> Only you and {firstName} can see this.
+                </>
+              ) : (
+                "Photos and files you send can be saved straight to a task."
+              )}
+            </p>
+            {!isStaff && !isPersonal && (
               <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand-gold/10 px-3 py-1.5 text-xs text-brand-navy">
                 <Sparkles size={12} className="text-brand-gold" />
                 Type <span className="font-mono font-semibold">/task</span> to assign work
@@ -430,7 +443,7 @@ export function ChatWindow({
                 send();
               }
             }}
-            placeholder={taskMode ? "What needs to be done?" : `Message ${firstName}`}
+            placeholder={taskMode ? "What needs to be done?" : isPersonal ? `Private message to ${firstName}` : `Message ${firstName}`}
             className={`h-11 min-w-0 flex-1 rounded-2xl border bg-slate-50 px-4 text-[15px] placeholder:text-slate-400 focus:bg-white focus:outline-none ${
               taskMode ? "border-brand-gold" : "border-slate-200 focus:border-brand-navy"
             }`}

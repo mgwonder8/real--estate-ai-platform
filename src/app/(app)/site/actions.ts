@@ -2,14 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { getTask, updateTaskStatus } from "@/lib/data/tasks";
+import { getTask } from "@/lib/data/tasks";
 import { addProof } from "@/lib/data/proofs";
 import { raiseQuery } from "@/lib/data/queries";
 import { addTaskComment } from "@/lib/data/task-comments";
 import { saveProofFile } from "@/lib/storage/upload";
 import { listOfficeAndOwnerStaffIds } from "@/lib/data/staff";
 import { notifyManyStaff } from "@/lib/push/send";
-import type { Role, TaskStatus } from "@/lib/data/types";
+import type { Role } from "@/lib/data/types";
 
 async function requireOwnTask(taskId: string) {
   const session = await auth();
@@ -19,28 +19,6 @@ async function requireOwnTask(taskId: string) {
     throw new Error("Task not found or not assigned to you");
   }
   return { session, task };
-}
-
-export async function updateOwnTaskStatusAction(formData: FormData) {
-  const taskId = String(formData.get("taskId") ?? "");
-  const toStatus = String(formData.get("toStatus") ?? "") as TaskStatus;
-  const { session, task } = await requireOwnTask(taskId);
-
-  await updateTaskStatus({ taskId, toStatus, changedBy: session.user.id });
-
-  revalidatePath("/site");
-  revalidatePath("/tasks", "layout");
-  revalidatePath("/sites", "layout");
-  revalidatePath("/dashboard");
-
-  if (toStatus === "completed") {
-    const recipients = await listOfficeAndOwnerStaffIds();
-    await notifyManyStaff(recipients, {
-      title: "Task awaiting approval",
-      body: task.title,
-      url: `/tasks/${taskId}`,
-    });
-  }
 }
 
 export type SubmitProofState =

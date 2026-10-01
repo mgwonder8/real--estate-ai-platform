@@ -7,10 +7,10 @@ export default async function SignedInLayout({ children }: { children: React.Rea
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const unreadChats = await countUnread(session.user.id).catch(() => 0);
+  const unread = await countUnread(session.user.id).catch(() => ({ team: 0, personal: 0 }));
 
   return (
-    <AppShell role={session.user.role} name={session.user.name} unreadChats={unreadChats}>
+    <AppShell role={session.user.role} name={session.user.name} unreadChats={unread.team} unreadPersonal={unread.personal}>
       {children}
     </AppShell>
   );

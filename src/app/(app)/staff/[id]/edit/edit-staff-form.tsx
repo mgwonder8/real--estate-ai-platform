@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Eye, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, inputClass } from "@/components/ui/field";
 import { updateStaffAction, type UpdateStaffState } from "@/app/(app)/staff/actions";
@@ -21,7 +21,10 @@ export function EditStaffForm({ staff, sites }: { staff: Staff; sites: Site[] })
   const [role, setRole] = useState<Role>(staff.role);
   const [primarySiteId, setPrimarySiteId] = useState(staff.siteId);
   const [extraSiteIds, setExtraSiteIds] = useState<string[]>(staff.extraSiteIds);
+  const [teamView, setTeamView] = useState<string[]>(staff.teamViewSiteIds);
   const router = useRouter();
+
+  const assignedSites = sites.filter((s) => s.id === primarySiteId || extraSiteIds.includes(s.id));
 
   if (state.status === "success") {
     return (
@@ -60,6 +63,10 @@ export function EditStaffForm({ staff, sites }: { staff: Staff; sites: Site[] })
       {extraSiteIds.map((id) => (
         <input key={id} type="hidden" name="extraSiteIds" value={id} />
       ))}
+      {role === "site_staff" &&
+        assignedSites
+          .filter((s) => teamView.includes(s.id))
+          .map((s) => <input key={s.id} type="hidden" name="teamViewSiteIds" value={s.id} />)}
 
       <div>
         <p className="mb-1.5 text-sm font-medium text-slate-800">Role</p>
@@ -130,6 +137,40 @@ export function EditStaffForm({ staff, sites }: { staff: Staff; sites: Site[] })
                       }`}
                     >
                       {s.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {assignedSites.length > 0 && (
+            <div className="rounded-2xl border border-slate-200 p-4">
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+                <Eye size={15} className="text-brand-gold" /> What {staff.name.split(" ")[0]} can see
+              </p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Turn a site on to let them see everyone&apos;s tasks there. They can view them but only tick off their own.
+              </p>
+              <div className="mt-3 divide-y divide-slate-100">
+                {assignedSites.map((s) => {
+                  const on = teamView.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      role="switch"
+                      aria-checked={on}
+                      onClick={() => setTeamView((prev) => (on ? prev.filter((x) => x !== s.id) : [...prev, s.id]))}
+                      className="flex w-full items-center justify-between gap-3 py-2.5 text-left"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-slate-800">{s.name}</span>
+                        <span className="block text-xs text-slate-500">{on ? "Everyone's tasks on this site" : "Only their own tasks"}</span>
+                      </span>
+                      <span className={`relative h-6 w-11 shrink-0 rounded-full transition ${on ? "bg-emerald-500" : "bg-slate-200"}`}>
+                        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${on ? "left-[22px]" : "left-0.5"}`} />
+                      </span>
                     </button>
                   );
                 })}

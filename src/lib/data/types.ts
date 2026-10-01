@@ -1,6 +1,6 @@
 export type Role = "owner" | "office_staff" | "site_staff";
 export type SiteStatus = "active" | "inactive";
-export type TaskPriority = "low" | "normal" | "urgent";
+export type TaskPriority = "low" | "normal" | "high" | "urgent";
 export type TaskStatus = "pending" | "in_progress" | "completed" | "approved";
 export type QueryStatus = "open" | "answered";
 
@@ -21,6 +21,8 @@ export interface Staff {
   role: Role;
   siteId: string;
   extraSiteIds: string[];
+  /** Sites where this person can see every teammate's tasks, not just their own. */
+  teamViewSiteIds: string[];
   phone: string;
   email: string;
   active: boolean;
@@ -29,6 +31,7 @@ export interface Staff {
 
 export interface Task {
   id: string;
+  serial: number;
   title: string;
   brief: string;
   siteId: string;
@@ -74,6 +77,21 @@ export interface User {
   email: string;
   passwordHash: string;
   staffId: string;
+  createdAt: string;
+}
+
+export interface PersonalTask {
+  id: string;
+  /** The pair: whoever added it and the other person. */
+  fromId: string;
+  toId: string;
+  /** Which of the two should do it. */
+  forId: string;
+  title: string;
+  remark: string;
+  priority: TaskPriority;
+  done: boolean;
+  doneAt: string;
   createdAt: string;
 }
 

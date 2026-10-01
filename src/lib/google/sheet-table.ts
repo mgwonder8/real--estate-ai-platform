@@ -45,13 +45,14 @@ const ensured = new Map<string, Promise<void>>();
 
 /** Creates the tab if it doesn't exist and appends any missing header columns. Runs once per tab per instance. */
 export function ensureTable(tab: string, headers: string[]): Promise<void> {
-  let ready = ensured.get(tab);
+  const key = `${tab}:${headers.join(",")}`;
+  let ready = ensured.get(key);
   if (!ready) {
     ready = createOrUpgradeTable(tab, headers).catch((err) => {
-      ensured.delete(tab);
+      ensured.delete(key);
       throw err;
     });
-    ensured.set(tab, ready);
+    ensured.set(key, ready);
   }
   return ready;
 }

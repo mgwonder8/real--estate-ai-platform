@@ -34,7 +34,7 @@ export function SiteCard({ site, tasks, people }: { site: Site; tasks: Task[]; p
         <ProgressRing value={pct} size={52} stroke={5} />
         <div className="grid flex-1 grid-cols-3 gap-2 text-center">
           <Metric value={open} label="Open" tone="text-amber-600" />
-          <Metric value={counts.completed} label="Review" tone="text-violet-600" />
+          <Metric value={counts.completed} label="To approve" tone="text-emerald-600" />
           <Metric value={late} label="Late" tone={late ? "text-red-600" : "text-slate-400"} />
         </div>
       </div>

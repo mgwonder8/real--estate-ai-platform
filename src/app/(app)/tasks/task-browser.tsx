@@ -1,21 +1,49 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, X, SearchX } from "lucide-react";
+import { Search, X, SearchX, Camera, MessageSquare, UserRound } from "lucide-react";
 import { Card, EmptyState } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { TaskRow } from "@/components/task-row";
-import { STATUS_META, STATUS_ORDER, isOverdue, sortByUrgency, firstName } from "@/lib/task-meta";
-import type { Site, Staff, Task, TaskStatus } from "@/lib/data/types";
+import { TaskLine, TaskLineHeader } from "@/components/task-line";
+import { TaskCheck, checkStateOf } from "@/components/task-check";
+import { toggleTaskDoneAction } from "@/app/(app)/tasks/actions";
+import { isOpen, isOverdue, nextCheckStatus, serialLabel, sortByUrgency, firstName } from "@/lib/task-meta";
+import { assignerName } from "@/lib/roles";
+import type { Site, Staff, Task } from "@/lib/data/types";
 
-type StatusFilter = TaskStatus | "all" | "late";
+type View = "all" | "open" | "review" | "done" | "late";
 
-export type TaskFilters = { status: StatusFilter; site: string; staff: string; q: string };
+export type TaskFilters = { status: View; site: string; staff: string; by: string; q: string };
+
+const VIEWS: { key: View; label: string; dot?: string }[] = [
+  { key: "all", label: "All" },
+  { key: "open", label: "Open", dot: "bg-sky-500" },
+  { key: "review", label: "Awaiting approval", dot: "bg-emerald-300" },
+  { key: "done", label: "Done", dot: "bg-emerald-500" },
+  { key: "late", label: "Late", dot: "bg-red-500" },
+];
+
+function inView(t: Task, view: View): boolean {
+  if (view === "open") return isOpen(t);
+  if (view === "review") return t.status === "completed";
+  if (view === "done") return t.status === "approved";
+  if (view === "late") return isOverdue(t);
+  return true;
+}
+
+/** Open work first (most urgent on top), then awaiting approval, then done (newest first). */
+function arrange(tasks: Task[]): Task[] {
+  const open = sortByUrgency(tasks.filter(isOpen));
+  const review = tasks.filter((t) => t.status === "completed").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const done = tasks.filter((t) => t.status === "approved").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return [...open, ...review, ...done];
+}
 
 export function TaskBrowser({
   tasks,
   sites,
   staff,
+  myRole,
   commentCounts,
   proofCounts,
   initial,
@@ -23,13 +51,15 @@ export function TaskBrowser({
   tasks: Task[];
   sites: Site[];
   staff: Staff[];
+  myRole: string;
   commentCounts: Record<string, number>;
   proofCounts: Record<string, number>;
   initial: TaskFilters;
 }) {
-  const [status, setStatus] = useState<StatusFilter>(initial.status);
+  const [view, setView] = useState<View>(initial.status);
   const [site, setSite] = useState(initial.site);
   const [person, setPerson] = useState(initial.staff);
+  const [by, setBy] = useState(initial.by);
   const [q, setQ] = useState(initial.q);
 
   const siteById = useMemo(() => Object.fromEntries(sites.map((s) => [s.id, s])), [sites]);
@@ -38,71 +68,62 @@ export function TaskBrowser({
     () => staff.filter((s) => s.role !== "owner" && tasks.some((t) => t.assigneeIds.includes(s.id))),
     [staff, tasks]
   );
+  const assigners = useMemo(() => {
+    const ids = Array.from(new Set(tasks.map((t) => t.createdBy)));
+    return ids.map((id) => ({ id, name: assignerName(staffById[id]) })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [tasks, staffById]);
 
   useEffect(() => {
     const params = new URLSearchParams();
-    if (status !== "all") params.set("status", status);
+    if (view !== "all") params.set("status", view);
     if (site !== "all") params.set("site", site);
     if (person !== "all") params.set("staff", person);
+    if (by !== "all") params.set("by", by);
     if (q.trim()) params.set("q", q.trim());
     const qs = params.toString();
     window.history.replaceState(null, "", qs ? `/tasks?${qs}` : "/tasks");
-  }, [status, site, person, q]);
+  }, [view, site, person, by, q]);
 
   const scoped = useMemo(() => {
-    const term = q.trim().toLowerCase();
+    const term = q.trim().toLowerCase().replace(/^#/, "");
     return tasks.filter((t) => {
       if (site !== "all" && t.siteId !== site) return false;
       if (person !== "all" && !t.assigneeIds.includes(person)) return false;
+      if (by !== "all" && t.createdBy !== by) return false;
       if (!term) return true;
-      const hay = [t.title, t.brief, siteById[t.siteId]?.name, ...t.assigneeIds.map((id) => staffById[id]?.name)]
+      if (String(t.serial) === term) return true;
+      const hay = [t.title, t.brief, siteById[t.siteId]?.name, assignerName(staffById[t.createdBy]), ...t.assigneeIds.map((id) => staffById[id]?.name)]
         .join(" ")
         .toLowerCase();
       return hay.includes(term);
     });
-  }, [tasks, site, person, q, siteById, staffById]);
+  }, [tasks, site, person, by, q, siteById, staffById]);
 
-  const counts = useMemo(() => {
-    const c: Record<StatusFilter, number> = { all: scoped.length, late: 0, pending: 0, in_progress: 0, completed: 0, approved: 0 };
-    for (const t of scoped) {
-      c[t.status] += 1;
-      if (isOverdue(t)) c.late += 1;
-    }
-    return c;
-  }, [scoped]);
+  const counts = useMemo(
+    () => Object.fromEntries(VIEWS.map((v) => [v.key, scoped.filter((t) => inView(t, v.key)).length])) as Record<View, number>,
+    [scoped]
+  );
 
-  const visible = useMemo(() => {
-    const list = scoped.filter((t) => (status === "all" ? true : status === "late" ? isOverdue(t) : t.status === status));
-    return sortByUrgency(list);
-  }, [scoped, status]);
-
-  const anyFilter = status !== "all" || site !== "all" || person !== "all" || !!q.trim();
-
-  const statusTabs: { key: StatusFilter; label: string; dot?: string }[] = [
-    { key: "all", label: "All" },
-    ...STATUS_ORDER.map((s) => ({ key: s as StatusFilter, label: STATUS_META[s].label, dot: STATUS_META[s].dot })),
-    { key: "late", label: "Late", dot: "bg-red-500" },
-  ];
+  const visible = useMemo(() => arrange(scoped.filter((t) => inView(t, view))), [scoped, view]);
+  const anyFilter = view !== "all" || site !== "all" || person !== "all" || by !== "all" || !!q.trim();
 
   return (
     <div className="space-y-4">
       <div className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        {statusTabs.map((tab) => {
-          const on = status === tab.key;
+        {VIEWS.map((tab) => {
+          const on = view === tab.key;
           if (tab.key === "late" && counts.late === 0 && !on) return null;
           return (
             <button
               key={tab.key}
-              onClick={() => setStatus(tab.key)}
+              onClick={() => setView(tab.key)}
               className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition ${
                 on ? "bg-brand-navy text-white shadow-sm" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
               }`}
             >
               {tab.dot && <span className={`h-2 w-2 rounded-full ${tab.dot}`} />}
               {tab.label}
-              <span className={`rounded-md px-1.5 text-xs ${on ? "bg-white/15" : "bg-slate-100 text-slate-500"}`}>
-                {counts[tab.key]}
-              </span>
+              <span className={`rounded-md px-1.5 text-xs ${on ? "bg-white/15" : "bg-slate-100 text-slate-500"}`}>{counts[tab.key]}</span>
             </button>
           );
         })}
@@ -110,12 +131,12 @@ export function TaskBrowser({
 
       <Card className="p-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="relative lg:w-64">
+          <div className="relative lg:w-60">
             <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search tasks"
+              placeholder="Search by name or #number"
               className="h-10 w-full rounded-xl bg-slate-50 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/15"
             />
           </div>
@@ -129,9 +150,42 @@ export function TaskBrowser({
             ))}
           </div>
 
-          <div className="hidden h-6 w-px bg-slate-200 lg:block" />
+          <label className="flex h-10 shrink-0 items-center gap-2 rounded-xl bg-slate-50 px-3 text-sm text-slate-600 focus-within:ring-2 focus-within:ring-brand-navy/15">
+            <UserRound size={15} className="text-slate-400" />
+            <span className="whitespace-nowrap text-xs font-medium text-slate-500">Assigned by</span>
+            <select
+              value={by}
+              onChange={(e) => setBy(e.target.value)}
+              className="min-w-0 bg-transparent text-sm font-medium text-slate-800 focus:outline-none"
+            >
+              <option value="all">Anyone</option>
+              {assigners.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          </label>
 
-          <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
+          {anyFilter && (
+            <button
+              onClick={() => {
+                setView("all");
+                setSite("all");
+                setPerson("all");
+                setBy("all");
+                setQ("");
+              }}
+              className="flex shrink-0 items-center gap-1 self-start rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 lg:ml-auto lg:self-auto"
+            >
+              <X size={13} /> Clear
+            </button>
+          )}
+        </div>
+
+        {people.length > 0 && (
+          <div className="no-scrollbar mt-3 flex items-center gap-1.5 overflow-x-auto border-t border-slate-100 pt-3">
+            <span className="mr-1 shrink-0 text-xs font-medium text-slate-400">Assigned to</span>
             {people.map((p) => {
               const on = person === p.id;
               return (
@@ -149,42 +203,69 @@ export function TaskBrowser({
               );
             })}
           </div>
-
-          {anyFilter && (
-            <button
-              onClick={() => {
-                setStatus("all");
-                setSite("all");
-                setPerson("all");
-                setQ("");
-              }}
-              className="flex shrink-0 items-center gap-1 self-start rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 lg:ml-auto lg:self-auto"
-            >
-              <X size={13} /> Clear
-            </button>
-          )}
-        </div>
+        )}
       </Card>
 
       <Card className="overflow-hidden">
         {visible.length === 0 ? (
           <EmptyState icon={<SearchX size={20} />} title={tasks.length === 0 ? "No tasks yet" : "Nothing matches these filters"} />
         ) : (
-          <div className="divide-y divide-slate-100">
-            {visible.map((t) => (
-              <TaskRow
-                key={t.id}
-                task={t}
-                siteName={site === "all" ? siteById[t.siteId]?.name : undefined}
-                assigneeNames={t.assigneeIds.map((id) => staffById[id]?.name ?? "?")}
-                comments={commentCounts[t.id]}
-                proofs={proofCounts[t.id]}
-              />
-            ))}
-          </div>
+          <>
+            <TaskLineHeader />
+            <div className="divide-y divide-slate-100">
+              {visible.map((t) => {
+                const state = checkStateOf(t.status);
+                const next = nextCheckStatus(t.status, myRole);
+                return (
+                  <TaskLine
+                    key={t.id}
+                    columns
+                    serial={serialLabel(t.serial)}
+                    title={t.title}
+                    remark={t.brief}
+                    priority={t.priority}
+                    state={state}
+                    due={t}
+                    href={`/tasks/${t.id}`}
+                    siteName={site === "all" ? siteById[t.siteId]?.name : undefined}
+                    byName={assignerName(staffById[t.createdBy])}
+                    toNames={t.assigneeIds.map((id) => staffById[id]?.name ?? "?")}
+                    extra={<Counts comments={commentCounts[t.id]} proofs={proofCounts[t.id]} />}
+                    check={
+                      <TaskCheck
+                        id={t.id}
+                        state={state}
+                        next={next ? checkStateOf(next) : null}
+                        action={toggleTaskDoneAction}
+                        label={state === "full" ? `Reopen ${t.title}` : `Mark ${t.title} as done`}
+                      />
+                    }
+                  />
+                );
+              })}
+            </div>
+          </>
         )}
       </Card>
     </div>
+  );
+}
+
+function Counts({ comments = 0, proofs = 0 }: { comments?: number; proofs?: number }) {
+  if (!comments && !proofs) return null;
+  return (
+    <>
+      {comments > 0 && (
+        <span className="inline-flex items-center gap-1 text-slate-400">
+          <MessageSquare size={11} /> {comments}
+        </span>
+      )}
+      {proofs > 0 && (
+        <span className="inline-flex items-center gap-1 text-slate-400">
+          <Camera size={11} /> {proofs}
+        </span>
+      )}
+    </>
   );
 }
 

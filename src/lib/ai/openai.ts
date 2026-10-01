@@ -35,7 +35,7 @@ export interface ParsedTaskDraft {
   brief: string;
   siteId: string | null;
   assigneeIds: string[];
-  priority: "low" | "normal" | "urgent";
+  priority: "low" | "normal" | "high" | "urgent";
   deadline: string | null;
   proofRequired: boolean;
   confidence: "high" | "medium" | "low";
@@ -53,15 +53,19 @@ export async function parseTaskFromChat(input: {
   const schema = {
     type: "object",
     properties: {
-      title: { type: "string", description: "Short task title, max 10 words" },
-      brief: { type: "string", description: "Fuller instructions/details for whoever does the work" },
+      title: { type: "string", description: "Short task name, max 8 words" },
+      brief: { type: "string", description: "One-line remark for whoever does the work, max 20 words. Empty string if the name says it all." },
       siteId: { type: ["string", "null"], description: "Best-matching site id from the provided list, or null if unclear" },
       assigneeIds: {
         type: "array",
         items: { type: "string" },
         description: "Ids of every staff member this task should be assigned to, matched from the provided list. Empty array if unclear.",
       },
-      priority: { type: "string", enum: ["low", "normal", "urgent"] },
+      priority: {
+        type: "string",
+        enum: ["low", "normal", "high", "urgent"],
+        description: "urgent = must be done today or flagged as an emergency; high = important or soon; low = whenever possible",
+      },
       deadline: { type: ["string", "null"], description: "ISO date YYYY-MM-DD if a deadline is implied, else null" },
       proofRequired: { type: "boolean", description: "Whether photo/video proof of completion should be required" },
       confidence: { type: "string", enum: ["high", "medium", "low"], description: "Your confidence in the site/assignee match" },

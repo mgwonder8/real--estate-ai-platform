@@ -2,31 +2,43 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ListChecks, Building2, MessageCircle, Plus, ClipboardList, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, ListChecks, Building2, MessageCircle, Plus, ClipboardList, Lock, type LucideIcon } from "lucide-react";
 import { isActivePath } from "@/components/app-sidebar";
 
-type Item = { href: string; label: string; icon: LucideIcon; primary?: boolean; badge?: boolean };
+type Item = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  primary?: boolean;
+  badge?: "chat" | "personal" | "both";
+  /** Extra sections this tab stands for. */
+  also?: string[];
+};
 
+// The owner's bar is full, so its Chat tab covers both team and personal (switch at the top of the page).
 const ownerItems: Item[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/tasks", label: "Tasks", icon: ListChecks },
   { href: "/tasks/new", label: "New task", icon: Plus, primary: true },
   { href: "/sites", label: "Sites", icon: Building2 },
-  { href: "/chat", label: "Chat", icon: MessageCircle, badge: true },
+  { href: "/chat", label: "Chat", icon: MessageCircle, badge: "both", also: ["/personal"] },
 ];
 
 const staffItems: Item[] = [
   { href: "/site", label: "My tasks", icon: ClipboardList },
-  { href: "/chat", label: "Chat", icon: MessageCircle, badge: true },
+  { href: "/chat", label: "Chat", icon: MessageCircle, badge: "chat" },
+  { href: "/personal", label: "Personal", icon: Lock, badge: "personal" },
 ];
 
-export function MobileNav({ role, unreadChats }: { role: string; unreadChats: number }) {
+const COLS: Record<number, string> = { 3: "grid-cols-3", 5: "grid-cols-5" };
+
+export function MobileNav({ role, unreadChats, unreadPersonal }: { role: string; unreadChats: number; unreadPersonal: number }) {
   const pathname = usePathname();
   const items = role === "site_staff" ? staffItems : ownerItems;
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200/80 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
-      <div className={`mx-auto grid h-16 max-w-md ${items.length === 2 ? "grid-cols-2" : "grid-cols-5"}`}>
+      <div className={`mx-auto grid h-16 max-w-md ${COLS[items.length]}`}>
         {items.map((item) => {
           const Icon = item.icon;
           if (item.primary) {
@@ -38,8 +50,9 @@ export function MobileNav({ role, unreadChats }: { role: string; unreadChats: nu
               </Link>
             );
           }
-          const active = isActivePath(pathname, item.href);
-          const count = item.badge ? unreadChats : 0;
+          const active = [item.href, ...(item.also ?? [])].some((h) => isActivePath(pathname, h));
+          const count =
+            item.badge === "chat" ? unreadChats : item.badge === "personal" ? unreadPersonal : item.badge === "both" ? unreadChats + unreadPersonal : 0;
           return (
             <Link
               key={item.href}

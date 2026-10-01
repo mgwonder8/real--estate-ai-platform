@@ -25,13 +25,13 @@ export const STATUS_META: Record<
     text: "text-amber-700",
   },
   completed: {
-    label: "Needs review",
+    label: "Awaiting approval",
     short: "Review",
-    dot: "bg-violet-500",
-    pill: "bg-violet-50 text-violet-800",
-    bar: "bg-violet-500",
-    soft: "bg-violet-50",
-    text: "text-violet-700",
+    dot: "bg-emerald-300",
+    pill: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+    bar: "bg-emerald-300",
+    soft: "bg-emerald-50/50",
+    text: "text-emerald-700",
   },
   approved: {
     label: "Done",
@@ -44,14 +44,35 @@ export const STATUS_META: Record<
   },
 };
 
-export const PRIORITY_META: Record<TaskPriority, { label: string; dot: string; pill: string }> = {
-  urgent: { label: "Urgent", dot: "bg-red-500", pill: "bg-red-50 text-red-700" },
-  normal: { label: "Normal", dot: "bg-sky-500", pill: "bg-sky-50 text-sky-700" },
-  low: { label: "Low", dot: "bg-slate-300", pill: "bg-slate-100 text-slate-600" },
+export const PRIORITY_META: Record<TaskPriority, { label: string; dot: string; pill: string; edge: string; blink: boolean }> = {
+  urgent: { label: "Urgent", dot: "bg-red-500", pill: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200", edge: "bg-red-500", blink: true },
+  high: { label: "High", dot: "bg-orange-500", pill: "bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200", edge: "bg-orange-400", blink: false },
+  normal: { label: "Normal", dot: "bg-sky-500", pill: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-100", edge: "bg-sky-400", blink: false },
+  low: { label: "Low", dot: "bg-slate-300", pill: "bg-slate-100 text-slate-600", edge: "bg-slate-300", blink: false },
 };
+
+export const PRIORITY_OPTIONS: TaskPriority[] = ["low", "normal", "high", "urgent"];
 
 export function isOpen(task: Pick<Task, "status">): boolean {
   return task.status === "pending" || task.status === "in_progress";
+}
+
+export function isFinished(task: Pick<Task, "status">): boolean {
+  return task.status === "completed" || task.status === "approved";
+}
+
+/** What ticking the checkbox does. null means this person can't change it. */
+export function nextCheckStatus(status: TaskStatus, role: string): TaskStatus | null {
+  if (role === "site_staff") {
+    if (status === "pending" || status === "in_progress") return "completed";
+    if (status === "completed") return "in_progress";
+    return null;
+  }
+  return status === "approved" ? "pending" : "approved";
+}
+
+export function serialLabel(serial: number): string {
+  return `#${serial}`;
 }
 
 export function isOverdue(task: Pick<Task, "deadline" | "status">): boolean {
@@ -113,7 +134,7 @@ export function statusCounts(tasks: Pick<Task, "status">[]): Record<TaskStatus, 
 }
 
 export function sortByUrgency<T extends Pick<Task, "deadline" | "status" | "priority">>(tasks: T[]): T[] {
-  const priorityRank: Record<TaskPriority, number> = { urgent: 0, normal: 1, low: 2 };
+  const priorityRank: Record<TaskPriority, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
   return [...tasks].sort((a, b) => {
     const od = Number(isOverdue(b)) - Number(isOverdue(a));
     if (od !== 0) return od;

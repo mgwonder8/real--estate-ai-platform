@@ -55,17 +55,23 @@ export async function updateStaffAction(
   const role = String(formData.get("role") ?? "site_staff") as Role;
   const siteId = String(formData.get("siteId") ?? "");
   const extraSiteIds = formData.getAll("extraSiteIds").map(String).filter(Boolean);
+  const assigned = [siteId, ...extraSiteIds].filter(Boolean);
+  const teamViewSiteIds = formData
+    .getAll("teamViewSiteIds")
+    .map(String)
+    .filter((sid) => assigned.includes(sid));
   const phone = String(formData.get("phone") ?? "");
 
   if (!id || !name) {
     return { status: "error", message: "Name is required." };
   }
 
-  await updateStaff(id, { name, role, siteId, extraSiteIds, phone });
+  await updateStaff(id, { name, role, siteId, extraSiteIds, teamViewSiteIds, phone });
 
   revalidatePath("/staff");
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
+  revalidatePath("/site");
   revalidatePath(`/staff/${id}/edit`);
 
   return { status: "success" };

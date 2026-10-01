@@ -3,9 +3,9 @@ import { MessageCircle, Plus } from "lucide-react";
 import { auth } from "@/auth";
 import { Card, EmptyState } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { PageHeader } from "@/components/ui/page-header";
+import { ChatSwitch } from "@/components/chat-switch";
 import { listStaff } from "@/lib/data/staff";
-import { listConversations } from "@/lib/data/messages";
+import { countUnread, listConversations } from "@/lib/data/messages";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -19,9 +19,10 @@ function timeAgo(iso: string): string {
 
 export default async function ChatPage() {
   const session = await auth();
-  const [allStaff, conversations] = await Promise.all([
+  const [allStaff, conversations, unread] = await Promise.all([
     listStaff(),
     listConversations(session!.user.id),
+    countUnread(session!.user.id),
   ]);
 
   const staffById = Object.fromEntries(allStaff.map((s) => [s.id, s]));
@@ -31,7 +32,8 @@ export default async function ChatPage() {
 
   return (
     <>
-      <PageHeader title="Team chat" />
+      <h1 className="mb-4 text-2xl font-semibold tracking-tight text-slate-900">Chat</h1>
+      <ChatSwitch active="team" teamUnread={unread.team} personalUnread={unread.personal} />
 
       {conversations.length === 0 && newChats.length === 0 && (
         <Card>
