@@ -76,7 +76,7 @@ export function EditStaffForm({ staff, sites }: { staff: Staff; sites: Site[] })
               key={r.value}
               type="button"
               onClick={() => setRole(r.value)}
-              className={`rounded-lg py-2 text-sm font-medium transition ${
+              className={`min-h-11 rounded-lg py-2 text-sm font-medium transition sm:min-h-0 ${
                 role === r.value ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
               }`}
             >
@@ -130,7 +130,7 @@ export function EditStaffForm({ staff, sites }: { staff: Staff; sites: Site[] })
                       key={s.id}
                       type="button"
                       onClick={() => toggleExtra(s.id)}
-                      className={`rounded-xl border px-3 py-1.5 text-sm font-medium transition active:scale-95 ${
+                      className={`min-h-11 rounded-xl border px-3.5 py-2 text-sm font-medium transition active:scale-95 sm:min-h-0 sm:px-3 sm:py-1.5 ${
                         on
                           ? "border-brand-navy bg-brand-navy text-white"
                           : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"

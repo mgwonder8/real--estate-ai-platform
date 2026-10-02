@@ -118,8 +118,8 @@ export function NewTaskForm({
                   <Building2 size={17} />
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-slate-900">{s.name}</span>
-                  {s.address && <span className="block truncate text-xs text-slate-500">{s.address}</span>}
+                  <span className="block break-words text-sm font-semibold text-slate-900">{s.name}</span>
+                  {s.address && <span className="block break-words text-xs text-slate-500">{s.address}</span>}
                 </span>
               </button>
             );
@@ -149,7 +149,7 @@ export function NewTaskForm({
                     key={q.label}
                     type="button"
                     onClick={() => setDeadline(on ? "" : value)}
-                    className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    className={`min-h-11 rounded-lg px-3.5 py-2 text-sm font-medium transition sm:min-h-0 ${
                       on ? "bg-brand-navy text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
@@ -162,7 +162,7 @@ export function NewTaskForm({
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
                 aria-label="Pick a date"
-                className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm text-slate-600 focus:border-brand-navy focus:outline-none"
+                className="min-h-11 min-w-0 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 focus:border-brand-navy focus:outline-none sm:min-h-0 sm:px-2"
               />
             </div>
           </div>
@@ -171,7 +171,7 @@ export function NewTaskForm({
         <button
           type="button"
           onClick={() => setMore((v) => !v)}
-          className="mt-5 flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-800"
+          className="mt-4 flex min-h-11 items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-800"
         >
           <ChevronDown size={16} className={`transition ${more ? "rotate-180" : ""}`} />
           More options
@@ -179,9 +179,9 @@ export function NewTaskForm({
 
         <div className={more ? "mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2" : "hidden"}>
           <input name="resourceLink" type="url" placeholder="Link (optional)" className={inputClass} />
-          <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-slate-300 px-3.5 py-2.5 text-sm text-slate-500 hover:bg-slate-50">
+          <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-slate-300 px-3.5 py-2.5 text-sm text-slate-500 hover:bg-slate-50">
             <Paperclip size={16} />
-            <span className="truncate">{fileName || "Attach a file"}</span>
+            <span className="min-w-0 break-all">{fileName || "Attach a file"}</span>
             <input
               name="resourceFile"
               type="file"

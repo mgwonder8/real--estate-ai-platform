@@ -39,13 +39,13 @@ export default async function PersonalThreadPage({
   const firstName = partner.name.split(" ")[0];
 
   return (
-    <div className="flex h-[calc(100dvh_-_7.5rem_-_env(safe-area-inset-bottom))] flex-col overflow-hidden bg-slate-50 lg:h-[calc(100vh_-_3rem)] lg:rounded-2xl lg:border lg:border-slate-200 lg:shadow-sm">
+    <div className="flex h-[calc(100dvh_-_7.75rem_-_env(safe-area-inset-bottom))] flex-col overflow-hidden bg-slate-50 lg:h-[calc(100vh_-_3rem)] lg:rounded-2xl lg:border lg:border-slate-200 lg:shadow-sm">
       <div className="border-b border-slate-200 bg-white">
         <div className="flex items-center gap-3 px-3 py-2.5 lg:px-4 lg:py-3">
           <Link
             href="/personal"
             aria-label="Back to personal"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100"
           >
             <ArrowLeft size={18} />
           </Link>

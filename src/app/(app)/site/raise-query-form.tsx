@@ -26,14 +26,14 @@ export function RaiseQueryForm() {
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         placeholder="Type or speak"
-        className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 px-3.5 text-sm placeholder:text-slate-400 focus:border-brand-navy focus:outline-none"
+        className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 px-3.5 text-sm placeholder:text-slate-400 focus:border-brand-navy focus:outline-none"
       />
       <VoiceInputButton onTranscribed={(text) => setMessage(text)} />
       <button
         type="submit"
         aria-label="Send"
         disabled={!message.trim()}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-navy text-white transition hover:bg-brand-navy-soft active:scale-95 disabled:opacity-40"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-navy text-white transition hover:bg-brand-navy-soft active:scale-95 disabled:opacity-40"
       >
         <SendHorizontal size={16} />
       </button>

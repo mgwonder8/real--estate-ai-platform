@@ -36,7 +36,7 @@ export function PortfolioInsightsPanel() {
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-700 disabled:opacity-50"
+          className="-mr-2 inline-flex min-h-11 items-center gap-1.5 px-2 text-[13px] font-medium text-slate-400 hover:text-slate-700 disabled:opacity-50"
         >
           <RefreshCw size={12} className={pending ? "animate-spin" : ""} /> Refresh
         </button>

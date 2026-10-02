@@ -50,12 +50,12 @@ export default async function ChatConversationPage({ params }: { params: Promise
   const defaultTaskId = lastDiscussed ?? options[0]?.id ?? "";
 
   return (
-    <div className="flex h-[calc(100dvh_-_7.5rem_-_env(safe-area-inset-bottom))] flex-col overflow-hidden bg-slate-50 lg:h-[calc(100vh_-_3rem)] lg:rounded-2xl lg:border lg:border-slate-200 lg:shadow-sm">
+    <div className="flex h-[calc(100dvh_-_7.75rem_-_env(safe-area-inset-bottom))] flex-col overflow-hidden bg-slate-50 lg:h-[calc(100vh_-_3rem)] lg:rounded-2xl lg:border lg:border-slate-200 lg:shadow-sm">
       <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-3 py-2.5 lg:px-4 lg:py-3.5">
         <Link
           href="/chat"
           aria-label="Back to chats"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 lg:hidden"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 lg:hidden"
         >
           <ArrowLeft size={18} />
         </Link>
@@ -73,7 +73,7 @@ export default async function ChatConversationPage({ params }: { params: Promise
           <a
             href={`tel:${partner.phone}`}
             aria-label={`Call ${partner.name}`}
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-brand-navy hover:text-white"
+            className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition hover:bg-brand-navy hover:text-white"
           >
             <Phone size={17} />
           </a>

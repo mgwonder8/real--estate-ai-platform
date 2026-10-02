@@ -5,9 +5,9 @@ import { Search, X, SearchX, Camera, MessageSquare, UserRound } from "lucide-rea
 import { Card, EmptyState } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { TaskLine, TaskLineHeader } from "@/components/task-line";
-import { TaskCheck, checkStateOf } from "@/components/task-check";
+import { TaskCheck } from "@/components/task-check";
 import { toggleTaskDoneAction } from "@/app/(app)/tasks/actions";
-import { isOpen, isOverdue, nextCheckStatus, serialLabel, sortByUrgency, firstName } from "@/lib/task-meta";
+import { checkStateOf, isOpen, isOverdue, nextCheckStatus, serialLabel, sortByUrgency, firstName } from "@/lib/task-meta";
 import { assignerName } from "@/lib/roles";
 import type { Site, Staff, Task } from "@/lib/data/types";
 
@@ -117,7 +117,7 @@ export function TaskBrowser({
             <button
               key={tab.key}
               onClick={() => setView(tab.key)}
-              className={`flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition ${
+              className={`flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium transition ${
                 on ? "bg-brand-navy text-white shadow-sm" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
               }`}
             >
@@ -137,7 +137,7 @@ export function TaskBrowser({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search by name or #number"
-              className="h-10 w-full rounded-xl bg-slate-50 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/15"
+              className="h-11 w-full rounded-xl bg-slate-50 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/15 sm:h-10"
             />
           </div>
 
@@ -150,7 +150,7 @@ export function TaskBrowser({
             ))}
           </div>
 
-          <label className="flex h-10 shrink-0 items-center gap-2 rounded-xl bg-slate-50 px-3 text-sm text-slate-600 focus-within:ring-2 focus-within:ring-brand-navy/15">
+          <label className="flex h-11 shrink-0 items-center gap-2 rounded-xl bg-slate-50 px-3 text-sm text-slate-600 focus-within:ring-2 focus-within:ring-brand-navy/15 sm:h-10">
             <UserRound size={15} className="text-slate-400" />
             <span className="whitespace-nowrap text-xs font-medium text-slate-500">Assigned by</span>
             <select
@@ -176,7 +176,7 @@ export function TaskBrowser({
                 setBy("all");
                 setQ("");
               }}
-              className="flex shrink-0 items-center gap-1 self-start rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 lg:ml-auto lg:self-auto"
+              className="flex min-h-10 shrink-0 items-center gap-1 self-start rounded-lg px-3 py-1.5 text-[13px] font-medium text-slate-500 hover:bg-slate-100 lg:ml-auto lg:min-h-0 lg:self-auto lg:px-2 lg:text-xs"
             >
               <X size={13} /> Clear
             </button>
@@ -193,7 +193,7 @@ export function TaskBrowser({
                   key={p.id}
                   onClick={() => setPerson(on ? "all" : p.id)}
                   title={p.name}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2.5 text-xs font-medium transition ${
+                  className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full py-0.5 pl-1 pr-3.5 text-[13px] font-medium transition sm:min-h-0 sm:pl-0.5 sm:pr-2.5 sm:text-xs ${
                     on ? "bg-brand-navy text-white" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
                   }`}
                 >
@@ -273,7 +273,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition ${
+      className={`min-h-10 shrink-0 whitespace-nowrap rounded-full px-3.5 py-2 text-[13px] font-medium transition sm:min-h-0 sm:px-3 sm:py-1.5 sm:text-xs ${
         on ? "bg-brand-navy text-white" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
       }`}
     >

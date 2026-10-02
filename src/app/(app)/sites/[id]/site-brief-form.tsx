@@ -22,14 +22,14 @@ export function SiteBriefForm({ site }: { site: Site }) {
               href={site.briefFileUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-brand-navy ring-1 ring-slate-200 hover:bg-slate-100"
+              className="inline-flex min-h-11 max-w-full items-center gap-1.5 break-all rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-brand-navy ring-1 ring-slate-200 hover:bg-slate-100"
             >
               <FileText size={14} /> {site.briefFileName || "Document"}
             </a>
           )}
           <button
             onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-100"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-100"
           >
             <Pencil size={13} /> Edit
           </button>
@@ -54,9 +54,9 @@ export function SiteBriefForm({ site }: { site: Site }) {
         className={`${inputClass} resize-none`}
         placeholder="Scope, key dates, contacts"
       />
-      <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-slate-300 px-3.5 py-2.5 text-sm text-slate-500 hover:bg-slate-50">
+      <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-slate-300 px-3.5 py-2.5 text-sm text-slate-500 hover:bg-slate-50">
         <Paperclip size={15} />
-        <span className="truncate">{fileName || "Attach a document"}</span>
+        <span className="min-w-0 break-all">{fileName || "Attach a document"}</span>
         <input name="briefFile" type="file" className="hidden" onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")} />
       </label>
       <div className="flex gap-2">

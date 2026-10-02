@@ -76,11 +76,11 @@ export function PhotoGrid({ photos, size = "md" }: { photos: Photo[]; size?: "sm
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Open original"
-                className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10"
+                className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10"
               >
                 <Download size={18} />
               </a>
-              <button onClick={close} aria-label="Close" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10">
+              <button onClick={close} aria-label="Close" className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
                 <X size={20} />
               </button>
             </div>

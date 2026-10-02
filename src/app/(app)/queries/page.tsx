@@ -43,19 +43,19 @@ export default async function QueriesPage() {
                   <div className="flex flex-wrap items-center gap-x-2 text-sm">
                     <span className="font-semibold text-slate-900">{raiser?.name ?? "Unknown"}</span>
                     {site && (
-                      <Link href={`/sites/${site.id}`} className="text-xs text-slate-500 hover:underline">
+                      <Link href={`/sites/${site.id}`} className="-my-2 inline-flex min-h-11 items-center text-xs text-slate-500 hover:underline">
                         {site.name}
                       </Link>
                     )}
                     <span className="text-xs text-slate-400">{timeAgo(q.createdAt)}</span>
                   </div>
-                  <p className="mt-2 inline-block rounded-2xl rounded-tl-sm bg-slate-100 px-4 py-2.5 text-[15px] text-slate-800">{q.message}</p>
+                  <p className="mt-2 inline-block max-w-full break-words rounded-2xl rounded-tl-sm bg-slate-100 px-4 py-2.5 text-[15px] text-slate-800">{q.message}</p>
                   {q.gpsLat && q.gpsLng && (
                     <a
                       href={`https://maps.google.com/?q=${q.gpsLat},${q.gpsLng}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="ml-2 inline-flex items-center gap-1 text-xs text-brand-navy hover:underline"
+                      className="ml-2 inline-flex min-h-11 items-center gap-1 text-xs text-brand-navy hover:underline"
                     >
                       <MapPin size={12} /> Location
                     </a>
@@ -80,8 +80,8 @@ export default async function QueriesPage() {
                 <div key={q.id} className="flex items-start gap-3 p-4">
                   <Avatar name={raiser?.name ?? "?"} size="sm" />
                   <div className="min-w-0 flex-1 text-sm">
-                    <p className="text-slate-800">{q.message}</p>
-                    <p className="mt-1.5 flex items-start gap-1.5 text-slate-500">
+                    <p className="break-words text-slate-800">{q.message}</p>
+                    <p className="mt-1.5 flex items-start gap-1.5 break-words text-slate-500">
                       <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-emerald-500" />
                       {q.reply}
                     </p>

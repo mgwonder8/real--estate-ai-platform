@@ -10,7 +10,7 @@ import { getSite } from "@/lib/data/sites";
 import { listTasksForSite } from "@/lib/data/tasks";
 import { listStaff } from "@/lib/data/staff";
 import { listAllQueries } from "@/lib/data/queries";
-import { STATUS_META, STATUS_ORDER, isOpen, isOverdue, statusCounts, timeAgo } from "@/lib/task-meta";
+import { STATUS_META, STATUS_ORDER, TASK_VIEW, isOpen, isOverdue, statusCounts, timeAgo } from "@/lib/task-meta";
 import { SiteBriefForm } from "@/app/(app)/sites/[id]/site-brief-form";
 import { SiteBoard } from "@/app/(app)/sites/[id]/site-board";
 
@@ -63,7 +63,7 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
             {STATUS_ORDER.map((s) => (
               <Link
                 key={s}
-                href={`/tasks?site=${site.id}&status=${s}`}
+                href={`/tasks?site=${site.id}&status=${TASK_VIEW[s]}`}
                 className={`rounded-xl px-3 py-2.5 transition hover:ring-1 hover:ring-slate-200 ${STATUS_META[s].soft}`}
               >
                 <p className="text-xl font-semibold text-slate-900">{counts[s]}</p>
@@ -102,7 +102,7 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
                 >
                   <Avatar name={p.name} size="md" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-900">{p.name}</p>
+                    <p className="break-words text-sm font-medium text-slate-900">{p.name}</p>
                     {p.phone && (
                       <p className="flex items-center gap-1 text-xs text-slate-400">
                         <Phone size={11} /> {p.phone}

@@ -22,7 +22,7 @@ export function SiteBoard({ tasks, people, staffById }: { tasks: Task[]; people:
         <div className="no-scrollbar mb-4 flex gap-1.5 overflow-x-auto">
           <button
             onClick={() => setPerson("all")}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+            className={`min-h-10 shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition sm:min-h-0 sm:px-3 sm:text-xs ${
               person === "all" ? "bg-brand-navy text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
             }`}
           >
@@ -34,7 +34,7 @@ export function SiteBoard({ tasks, people, staffById }: { tasks: Task[]; people:
               <button
                 key={p.id}
                 onClick={() => setPerson(on ? "all" : p.id)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-3 text-xs font-medium transition ${
+                className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full py-0.5 pl-1 pr-3.5 text-[13px] font-medium transition sm:min-h-0 sm:pl-0.5 sm:pr-3 sm:text-xs ${
                   on ? "bg-brand-navy text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
                 }`}
               >
@@ -69,7 +69,7 @@ export function SiteBoard({ tasks, people, staffById }: { tasks: Task[]; people:
                   >
                     <div className="flex items-start gap-2">
                       <span className="mt-0.5 font-mono text-[11px] font-semibold text-slate-400">{serialLabel(t.serial)}</span>
-                      <p className="line-clamp-2 flex-1 text-sm font-medium text-slate-900">{t.title}</p>
+                      <p className="line-clamp-3 flex-1 break-words text-sm font-medium text-slate-900">{t.title}</p>
                       <span className="mt-1.5">
                         <PriorityDot priority={t.priority} />
                       </span>

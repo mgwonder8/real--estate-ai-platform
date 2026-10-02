@@ -11,12 +11,12 @@ export function AppTopbar({ onMenuClick }: { onMenuClick: () => void }) {
     <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-slate-200/70 bg-white/90 px-3 backdrop-blur lg:hidden">
       <button
         onClick={onMenuClick}
-        className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100"
+        className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100 active:scale-95"
         aria-label="Open menu"
       >
         <Menu size={20} />
       </button>
-      <Link href="/" className="flex items-center gap-2">
+      <Link href="/" className="flex min-h-11 items-center gap-2 pr-2">
         <Logo size="sm" />
         <span className="text-[15px] font-semibold tracking-tight text-slate-900">Chai Labs</span>
       </Link>

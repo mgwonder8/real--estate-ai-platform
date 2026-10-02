@@ -75,7 +75,7 @@ export function NotificationsToggle() {
 
   if (status === "unsupported" || status === "loading") return null;
 
-  const base = "flex h-9 w-9 items-center justify-center rounded-xl transition";
+  const base = "flex h-11 w-11 items-center justify-center rounded-xl transition";
 
   if (status === "on") {
     return (
@@ -96,7 +96,7 @@ export function NotificationsToggle() {
   return (
     <button onClick={enable} title="Turn on notifications" className={`${base} relative cursor-pointer text-slate-500 hover:bg-slate-100`}>
       <Bell size={18} />
-      <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-gold ring-2 ring-white" />
+      <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-brand-gold ring-2 ring-white" />
     </button>
   );
 }

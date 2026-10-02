@@ -29,7 +29,7 @@ export function CommentBox({
         required
         autoComplete="off"
         placeholder={placeholder}
-        className="h-11 flex-1 rounded-xl bg-slate-50 px-4 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/15"
+        className="h-11 min-w-0 flex-1 rounded-xl bg-slate-50 px-4 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/15"
       />
       <button
         type="submit"

@@ -51,6 +51,14 @@ export const PRIORITY_META: Record<TaskPriority, { label: string; dot: string; p
   low: { label: "Low", dot: "bg-slate-300", pill: "bg-slate-100 text-slate-600", edge: "bg-slate-300", blink: false },
 };
 
+/** Which tab of the task list shows a given status. */
+export const TASK_VIEW: Record<TaskStatus, "open" | "review" | "done"> = {
+  pending: "open",
+  in_progress: "open",
+  completed: "review",
+  approved: "done",
+};
+
 export const PRIORITY_OPTIONS: TaskPriority[] = ["low", "normal", "high", "urgent"];
 
 export function isOpen(task: Pick<Task, "status">): boolean {
@@ -59,6 +67,15 @@ export function isOpen(task: Pick<Task, "status">): boolean {
 
 export function isFinished(task: Pick<Task, "status">): boolean {
   return task.status === "completed" || task.status === "approved";
+}
+
+/** none = open, half = ticked by staff and awaiting approval, full = done. */
+export type CheckState = "none" | "half" | "full";
+
+export function checkStateOf(status: TaskStatus): CheckState {
+  if (status === "approved") return "full";
+  if (status === "completed") return "half";
+  return "none";
 }
 
 /** What ticking the checkbox does. null means this person can't change it. */

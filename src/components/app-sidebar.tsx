@@ -110,8 +110,8 @@ export function AppSidebar({
               <span className="block text-xs text-slate-500">Real Estate</span>
             </span>
           </Link>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 lg:hidden" aria-label="Close menu">
-            <X size={18} />
+          <button onClick={onClose} className="-mr-2 flex h-11 w-11 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 lg:hidden" aria-label="Close menu">
+            <X size={20} />
           </button>
         </div>
 
@@ -120,7 +120,7 @@ export function AppSidebar({
             <Link
               href="/tasks/new"
               onClick={onClose}
-              className="flex h-10 items-center justify-center gap-2 rounded-xl bg-brand-navy text-sm font-medium text-white shadow-sm transition hover:bg-brand-navy-soft active:scale-[0.98]"
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-navy text-sm font-medium text-white shadow-sm transition hover:bg-brand-navy-soft active:scale-[0.98]"
             >
               <Plus size={17} strokeWidth={2.5} /> New task
             </Link>
@@ -144,7 +144,7 @@ export function AppSidebar({
                       href={item.href}
                       onClick={onClose}
                       aria-current={active ? "page" : undefined}
-                      className={`relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
+                      className={`relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors lg:py-2 ${
                         active
                           ? "bg-brand-navy/[0.06] font-semibold text-brand-navy"
                           : "font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900"
@@ -179,7 +179,7 @@ export function AppSidebar({
                 type="submit"
                 title="Sign out"
                 aria-label="Sign out"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
               >
                 <LogOut size={17} />
               </button>

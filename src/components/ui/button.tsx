@@ -13,8 +13,8 @@ const variantStyles: Record<Variant, string> = {
 };
 
 const sizeStyles: Record<Size, string> = {
-  sm: "h-8 px-3 text-xs",
-  md: "h-10 px-4 text-sm",
+  sm: "h-10 px-3.5 text-[13px] sm:h-8 sm:px-3 sm:text-xs",
+  md: "h-11 px-4 text-sm sm:h-10",
   lg: "h-12 px-5 text-sm",
 };
 

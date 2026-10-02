@@ -3,7 +3,7 @@ import { CheckCircle2, Eye, FileText, Link2, MessageSquare, Paperclip, UsersRoun
 import { auth } from "@/auth";
 import { Card, EmptyState } from "@/components/ui/card";
 import { ExpandableTask } from "@/components/expandable-task";
-import { TaskCheck, checkStateOf } from "@/components/task-check";
+import { TaskCheck } from "@/components/task-check";
 import { TaskFiles } from "@/components/task-files";
 import { listTasks } from "@/lib/data/tasks";
 import { listSites } from "@/lib/data/sites";
@@ -12,7 +12,7 @@ import { listAllProofs } from "@/lib/data/proofs";
 import { listAllTaskReferences } from "@/lib/data/task-references";
 import { allSiteIds, getStaff, listStaff, teamViewSites } from "@/lib/data/staff";
 import { listQueriesRaisedBy } from "@/lib/data/queries";
-import { firstName, isFinished, isOpen, nextCheckStatus, serialLabel, sortByUrgency, timeAgo } from "@/lib/task-meta";
+import { checkStateOf, firstName, isFinished, isOpen, nextCheckStatus, serialLabel, sortByUrgency, timeAgo } from "@/lib/task-meta";
 import { assignerName } from "@/lib/roles";
 import { greetingIST, greetingName } from "@/lib/greeting";
 import { toggleTaskDoneAction } from "@/app/(app)/tasks/actions";

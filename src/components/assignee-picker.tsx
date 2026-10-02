@@ -47,7 +47,7 @@ export function AssigneePicker({
             type="button"
             onClick={() => toggle(s.id)}
             aria-pressed={on}
-            className={`group flex items-center gap-2.5 rounded-2xl border py-1.5 pl-1.5 pr-3.5 text-left transition active:scale-[0.98] ${
+            className={`group flex min-h-11 items-center gap-2.5 rounded-2xl border py-1.5 pl-1.5 pr-3.5 text-left transition active:scale-[0.98] ${
               on
                 ? "border-brand-navy bg-brand-navy text-white shadow-sm"
                 : "border-slate-200 bg-white text-slate-800 hover:border-slate-300"

@@ -100,7 +100,7 @@ export default async function InsightsPage() {
             {perSite.map(({ site, total: t, counts: c, late: l, rate: r }) => (
               <Link key={site.id} href={`/sites/${site.id}`} className="block rounded-xl px-3 py-3 transition hover:bg-slate-50">
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <p className="truncate text-sm font-medium text-slate-900">{site.name}</p>
+                  <p className="break-words text-sm font-medium text-slate-900">{site.name}</p>
                   <span className="flex shrink-0 items-center gap-2 text-xs">
                     {l > 0 && <span className="rounded-full bg-red-50 px-2 py-0.5 font-medium text-red-700">{l} late</span>}
                     <span className="font-semibold text-slate-700">{r}%</span>
@@ -130,7 +130,7 @@ export default async function InsightsPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
-                      <Link href={`/tasks?staff=${person.id}`} className="truncate text-sm font-medium text-slate-900 hover:underline">
+                      <Link href={`/tasks?staff=${person.id}`} className="-my-3 break-words py-3 text-sm font-medium text-slate-900 hover:underline">
                         {person.name}
                       </Link>
                       <span className="shrink-0 text-sm font-semibold text-slate-800">{r}%</span>
@@ -164,8 +164,8 @@ export default async function InsightsPage() {
               <Link key={t.id} href={`/tasks/${t.id}`} className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-slate-50">
                 <Avatar name={staffById[t.assigneeIds[0]]?.name ?? "?"} size="sm" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-900">{t.title}</p>
-                  <p className="truncate text-xs text-slate-500">{siteById[t.siteId]?.name}</p>
+                  <p className="break-words text-sm font-medium text-slate-900">{t.title}</p>
+                  <p className="break-words text-xs text-slate-500">{siteById[t.siteId]?.name}</p>
                 </div>
                 <DueBadge task={t} />
               </Link>

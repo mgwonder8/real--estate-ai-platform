@@ -14,20 +14,20 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-      <div className="flex min-w-0 items-center gap-3">
+    <div className="mb-5 flex flex-wrap items-start justify-between gap-x-3 gap-y-3 sm:mb-6 sm:items-center">
+      <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
         {back && (
           <Link
             href={back}
             aria-label="Back"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 active:scale-95"
           >
-            <ArrowLeft size={17} />
+            <ArrowLeft size={18} />
           </Link>
         )}
-        <div className="min-w-0">
-          <h1 className="truncate text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
-          {subtitle && <div className="mt-0.5 text-sm text-slate-500">{subtitle}</div>}
+        <div className="min-w-0 flex-1">
+          <h1 className="break-words text-xl font-semibold leading-snug tracking-tight text-slate-900 sm:text-2xl">{title}</h1>
+          {subtitle && <div className="mt-1 text-sm text-slate-500">{subtitle}</div>}
         </div>
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}

@@ -71,7 +71,7 @@ export function VoiceInputButton({
     else if (state === "idle" || state === "error") startRecording();
   }
 
-  const dim = size === "lg" ? "h-12 w-12" : "h-10 w-10";
+  const dim = size === "lg" ? "h-12 w-12" : "h-11 w-11";
   const recording = state === "recording";
 
   return (

@@ -51,11 +51,11 @@ export default async function StaffPage() {
             const late = mine.filter(isOverdue).length;
             const rate = mine.length ? Math.round((done / mine.length) * 100) : 0;
             return (
-              <Card key={s.id} className={`flex flex-col p-5 ${s.active ? "" : "opacity-60"}`}>
+              <Card key={s.id} className={`flex flex-col p-4 sm:p-5 ${s.active ? "" : "opacity-60"}`}>
                 <div className="flex items-start gap-3">
                   <Avatar name={s.name} size="lg" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-base font-semibold text-slate-900">{s.name}</p>
+                    <p className="break-words text-base font-semibold text-slate-900">{s.name}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${ROLE_TONE[s.role]}`}>{ROLE_LABEL[s.role]}</span>
                       {allSiteIds(s).map((sid) => siteById[sid] && (
@@ -68,21 +68,22 @@ export default async function StaffPage() {
                   </div>
                   <Link
                     href={`/staff/${s.id}/edit`}
-                    className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    className="-mr-1 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 active:scale-95"
                     title="Edit"
+                    aria-label={`Edit ${s.name}`}
                   >
-                    <Pencil size={15} />
+                    <Pencil size={17} />
                   </Link>
                 </div>
 
-                <div className="mt-4 space-y-1 text-xs text-slate-500">
+                <div className="mt-3 text-sm text-slate-600">
                   {s.phone && (
-                    <a href={`tel:${s.phone}`} className="flex items-center gap-2 hover:text-brand-navy">
-                      <Phone size={12} /> {s.phone}
+                    <a href={`tel:${s.phone}`} className="flex min-h-11 items-center gap-2.5 rounded-lg hover:text-brand-navy">
+                      <Phone size={15} className="shrink-0 text-slate-400" /> {s.phone}
                     </a>
                   )}
-                  <a href={`mailto:${s.email}`} className="flex items-center gap-2 truncate hover:text-brand-navy">
-                    <Mail size={12} /> {s.email}
+                  <a href={`mailto:${s.email}`} className="flex min-h-11 items-center gap-2.5 rounded-lg break-all hover:text-brand-navy">
+                    <Mail size={15} className="shrink-0 text-slate-400" /> {s.email}
                   </a>
                 </div>
 
@@ -101,10 +102,10 @@ export default async function StaffPage() {
                 )}
 
                 {s.id !== session!.user.id && (
-                  <form action={toggleStaffActiveAction} className="mt-3 flex justify-end">
+                  <form action={toggleStaffActiveAction} className="mt-1 flex justify-end">
                     <input type="hidden" name="id" value={s.id} />
                     <input type="hidden" name="active" value={(!s.active).toString()} />
-                    <button type="submit" className="text-xs font-medium text-slate-400 hover:text-slate-700">
+                    <button type="submit" className="flex h-11 items-center rounded-lg px-3 text-sm font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-700">
                       {s.active ? "Deactivate" : "Activate"}
                     </button>
                   </form>
@@ -122,7 +123,7 @@ function Mini({ value, label, tone }: { value: number; label: string; tone: stri
   return (
     <div>
       <p className={`text-base font-semibold leading-none ${value ? tone : "text-slate-300"}`}>{value}</p>
-      <p className="mt-1 text-[10px] text-slate-400">{label}</p>
+      <p className="mt-1 text-[11px] leading-tight text-slate-500">{label}</p>
     </div>
   );
 }

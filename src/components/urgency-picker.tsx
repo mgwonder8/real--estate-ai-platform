@@ -24,7 +24,7 @@ export function UrgencyPicker({
             role="radio"
             aria-checked={on}
             onClick={() => onChange(p)}
-            className={`flex items-center justify-center gap-1.5 rounded-lg font-medium transition ${compact ? "py-1.5 text-xs" : "py-2 text-sm"} ${
+            className={`flex items-center justify-center gap-1.5 rounded-lg font-medium transition ${compact ? "min-h-10 py-1.5 text-xs sm:min-h-0" : "min-h-11 py-2 text-sm sm:min-h-0"} ${
               on ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
             }`}
           >

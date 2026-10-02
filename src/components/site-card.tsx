@@ -14,14 +14,14 @@ export function SiteCard({ site, tasks, people }: { site: Site; tasks: Task[]; p
   return (
     <Link
       href={`/sites/${site.id}`}
-      className="group flex flex-col rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-200/60"
+      className="group flex flex-col rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-200/60"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-base font-semibold text-slate-900">{site.name}</p>
+          <p className="break-words text-base font-semibold text-slate-900">{site.name}</p>
           {site.address && (
-            <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-slate-500">
-              <MapPin size={11} /> {site.address}
+            <p className="mt-0.5 flex items-start gap-1 break-words text-xs text-slate-500">
+              <MapPin size={11} className="mt-0.5 shrink-0" /> {site.address}
             </p>
           )}
         </div>

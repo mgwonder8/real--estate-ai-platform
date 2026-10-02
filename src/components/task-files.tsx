@@ -112,8 +112,8 @@ function DocCard({ file }: { file: RefFile }) {
         {pdf ? <FileText size={18} /> : <Paperclip size={18} />}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-slate-800">{file.name}</span>
-        <span className="block truncate text-xs text-slate-500">
+        <span className="block break-all text-sm font-medium text-slate-800">{file.name}</span>
+        <span className="block break-words text-xs text-slate-500">
           {file.by}
           {file.viaChat ? ", sent in chat" : ""} · {timeAgo(file.at)}
         </span>

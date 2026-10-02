@@ -270,7 +270,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 </span>
                 <span className="min-w-0">
                   <span className="block text-xs text-slate-400">Site</span>
-                  <span className="block truncate text-sm font-semibold text-slate-900">{site.name}</span>
+                  <span className="block break-words text-sm font-semibold text-slate-900">{site.name}</span>
                 </span>
               </Link>
             )}
@@ -278,10 +278,10 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
               <p className="mb-2.5 text-xs text-slate-400">Assigned to</p>
               <div className="space-y-2.5">
                 {task.assigneeIds.map((aid) => (
-                  <Link key={aid} href={`/tasks?staff=${aid}`} className="flex items-center gap-2.5 rounded-lg hover:opacity-80">
+                  <Link key={aid} href={`/tasks?staff=${aid}`} className="flex min-h-11 items-center gap-2.5 rounded-lg hover:opacity-80">
                     <Avatar name={nameOf(aid)} size="sm" />
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-slate-800">{nameOf(aid)}</span>
+                      <span className="block break-words text-sm font-medium text-slate-800">{nameOf(aid)}</span>
                       {staffById[aid]?.phone && <span className="block text-xs text-slate-400">{staffById[aid].phone}</span>}
                     </span>
                   </Link>

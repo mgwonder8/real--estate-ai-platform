@@ -88,7 +88,7 @@ export default async function DashboardPage() {
         <div className="lg:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-900">Sites</h2>
-            <Link href="/sites" className="text-xs font-medium text-slate-500 hover:text-brand-navy">
+            <Link href="/sites" className="-my-3 -mr-2 flex min-h-11 items-center px-2 text-[13px] font-medium text-slate-500 hover:text-brand-navy">
               See all
             </Link>
           </div>
@@ -129,11 +129,11 @@ export default async function DashboardPage() {
                     {t.status === "completed" ? <Hourglass size={15} /> : <CircleAlert size={15} />}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-900">
+                    <p className="break-words text-sm font-medium text-slate-900">
                       <span className="mr-1.5 font-mono text-xs text-slate-400">{serialLabel(t.serial)}</span>
                       {t.title}
                     </p>
-                    <p className="truncate text-xs text-slate-500">
+                    <p className="break-words text-xs text-slate-500">
                       {siteById[t.siteId]?.name} · {assignerName(staffById[t.createdBy])} to{" "}
                       {t.assigneeIds.map((id) => firstName(staffById[id]?.name)).join(", ")}
                     </p>
@@ -161,14 +161,14 @@ export default async function DashboardPage() {
 
           {workload.length > 0 && (
             <Card>
-              <CardHeader title="Team" action={<Link href="/staff" className="text-xs font-medium text-slate-500 hover:text-brand-navy">See all</Link>} />
+              <CardHeader title="Team" action={<Link href="/staff" className="-my-3 -mr-2 flex min-h-11 items-center px-2 text-[13px] font-medium text-slate-500 hover:text-brand-navy">See all</Link>} />
               <div className="space-y-1 px-2 pb-3">
                 {workload.map(({ p, open, total, done }) => (
                   <Link key={p.id} href={`/tasks?staff=${p.id}`} className="flex items-center gap-3 rounded-xl px-3 py-2 transition hover:bg-slate-50">
                     <Avatar name={p.name} size="sm" />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
-                        <p className="truncate text-sm font-medium text-slate-900">{p.name}</p>
+                        <p className="break-words text-sm font-medium text-slate-900">{p.name}</p>
                         <span className="shrink-0 text-xs text-slate-500">
                           <b className="font-semibold text-amber-600">{open}</b> open
                         </span>
