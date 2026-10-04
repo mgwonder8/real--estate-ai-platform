@@ -1,10 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import { Lock, MessageCircle } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 
 export function ChatSwitch({ active, teamUnread, personalUnread }: { active: "team" | "personal"; teamUnread: number; personalUnread: number }) {
+  const t = useT();
   const items = [
-    { key: "team", href: "/chat", label: "Team chat", icon: MessageCircle, count: teamUnread },
-    { key: "personal", href: "/personal", label: "Personal", icon: Lock, count: personalUnread },
+    { key: "team", href: "/chat", label: t("nav.teamChat"), icon: MessageCircle, count: teamUnread },
+    { key: "personal", href: "/personal", label: t("nav.personal"), icon: Lock, count: personalUnread },
   ] as const;
   return (
     <div className="mb-5 grid grid-cols-2 gap-1 rounded-2xl bg-white p-1.5 ring-1 ring-slate-200/80 sm:max-w-sm">

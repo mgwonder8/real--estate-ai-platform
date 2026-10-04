@@ -2,11 +2,13 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { RefreshCw } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 import { generatePortfolioInsightsAction, type AiTextState } from "@/app/(app)/insights/actions";
 
 const initialState: AiTextState = { status: "idle" };
 
 export function PortfolioInsightsPanel() {
+  const t = useT();
   const [state, formAction, pending] = useActionState(generatePortfolioInsightsAction, initialState);
   const autoRan = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -38,7 +40,7 @@ export function PortfolioInsightsPanel() {
           disabled={pending}
           className="-mr-2 inline-flex min-h-11 items-center gap-1.5 px-2 text-[13px] font-medium text-slate-400 hover:text-slate-700 disabled:opacity-50"
         >
-          <RefreshCw size={12} className={pending ? "animate-spin" : ""} /> Refresh
+          <RefreshCw size={12} className={pending ? "animate-spin" : ""} /> {t("common.refresh")}
         </button>
       </form>
     </div>

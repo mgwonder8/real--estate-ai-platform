@@ -18,41 +18,44 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { LanguageSegmented } from "@/components/language-switcher";
+import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n/messages";
 import { NotificationsToggle } from "@/components/notifications-toggle";
-import { ROLE_LABEL, displayName } from "@/lib/roles";
+import { roleLabel, displayName } from "@/lib/roles";
 
-export type NavItem = { href: string; label: string; icon: LucideIcon; badge?: "chat" | "personal" };
-export type NavGroup = { title?: string; items: NavItem[] };
+export type NavItem = { href: string; label: MessageKey; icon: LucideIcon; badge?: "chat" | "personal" };
+export type NavGroup = { title?: MessageKey; items: NavItem[] };
 
 export const ownerNav: NavGroup[] = [
   {
     items: [
-      { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-      { href: "/tasks", label: "Tasks", icon: ListChecks },
-      { href: "/sites", label: "Sites", icon: Building2 },
+      { href: "/dashboard", label: "nav.home", icon: LayoutDashboard },
+      { href: "/tasks", label: "nav.tasks", icon: ListChecks },
+      { href: "/sites", label: "nav.sites", icon: Building2 },
     ],
   },
   {
-    title: "People",
+    title: "nav.groupPeople",
     items: [
-      { href: "/chat", label: "Team chat", icon: MessageCircle, badge: "chat" },
-      { href: "/personal", label: "Personal", icon: Lock, badge: "personal" },
-      { href: "/staff", label: "Team", icon: Users },
-      { href: "/queries", label: "Queries", icon: MessageCircleQuestion },
+      { href: "/chat", label: "nav.teamChat", icon: MessageCircle, badge: "chat" },
+      { href: "/personal", label: "nav.personal", icon: Lock, badge: "personal" },
+      { href: "/staff", label: "nav.team", icon: Users },
+      { href: "/queries", label: "nav.queries", icon: MessageCircleQuestion },
     ],
   },
   {
-    title: "Reports",
-    items: [{ href: "/insights", label: "Insights", icon: BarChart3 }],
+    title: "nav.groupReports",
+    items: [{ href: "/insights", label: "nav.insights", icon: BarChart3 }],
   },
 ];
 
 export const siteStaffNav: NavGroup[] = [
   {
     items: [
-      { href: "/site", label: "My tasks", icon: ClipboardList },
-      { href: "/chat", label: "Team chat", icon: MessageCircle, badge: "chat" },
-      { href: "/personal", label: "Personal", icon: Lock, badge: "personal" },
+      { href: "/site", label: "nav.myTasks", icon: ClipboardList },
+      { href: "/chat", label: "nav.teamChat", icon: MessageCircle, badge: "chat" },
+      { href: "/personal", label: "nav.personal", icon: Lock, badge: "personal" },
     ],
   },
 ];
@@ -64,10 +67,10 @@ export function isActivePath(pathname: string | null, href: string) {
 }
 
 export function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-  const box = size === "lg" ? "h-16 w-16" : size === "sm" ? "h-8 w-8" : "h-10 w-10";
+  const height = size === "lg" ? "h-24" : size === "sm" ? "h-10" : "h-16";
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src="/logo.png" alt="Chai Labs" className={`${box} shrink-0 object-contain`} />
+    <img src="/millennium-logo.png" alt="Millennium Group" className={`${height} w-auto shrink-0 object-contain`} />
   );
 }
 
@@ -88,6 +91,7 @@ export function AppSidebar({
   onClose: () => void;
   signOutAction: () => Promise<void>;
 }) {
+  const t = useT();
   const pathname = usePathname();
   const isStaff = role === "site_staff";
   const groups = isStaff ? siteStaffNav : ownerNav;
@@ -103,14 +107,10 @@ export function AppSidebar({
         }`}
       >
         <div className="flex items-center justify-between px-5 pb-5 pt-5">
-          <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
+          <Link href="/" onClick={onClose} className="flex items-center" aria-label="Millennium Group">
             <Logo />
-            <span className="leading-tight">
-              <span className="block text-[15px] font-semibold tracking-tight text-slate-900">Chai Labs</span>
-              <span className="block text-xs text-slate-500">Real Estate</span>
-            </span>
           </Link>
-          <button onClick={onClose} className="-mr-2 flex h-11 w-11 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 lg:hidden" aria-label="Close menu">
+          <button onClick={onClose} className="-mr-2 flex h-11 w-11 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 lg:hidden" aria-label={t("nav.closeMenu")}>
             <X size={20} />
           </button>
         </div>
@@ -122,7 +122,7 @@ export function AppSidebar({
               onClick={onClose}
               className="flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-navy text-sm font-medium text-white shadow-sm transition hover:bg-brand-navy-soft active:scale-[0.98]"
             >
-              <Plus size={17} strokeWidth={2.5} /> New task
+              <Plus size={17} strokeWidth={2.5} /> {t("nav.newTask")}
             </Link>
           </div>
         )}
@@ -131,7 +131,7 @@ export function AppSidebar({
           {groups.map((group, gi) => (
             <div key={gi}>
               {group.title && (
-                <p className="mb-1 px-3 text-[11px] font-medium uppercase tracking-wider text-slate-400">{group.title}</p>
+                <p className="mb-1 px-3 text-[11px] font-medium uppercase tracking-wider text-slate-400">{t(group.title)}</p>
               )}
               <div className="space-y-0.5">
                 {group.items.map((item) => {
@@ -152,7 +152,7 @@ export function AppSidebar({
                     >
                       {active && <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-brand-gold" />}
                       <Icon size={18} className={active ? "text-brand-navy" : "text-slate-400"} />
-                      <span className="flex-1">{item.label}</span>
+                      <span className="flex-1">{t(item.label)}</span>
                       {count > 0 && (
                         <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-gold px-1.5 text-[11px] font-semibold text-white">
                           {count > 99 ? "99+" : count}
@@ -166,19 +166,20 @@ export function AppSidebar({
           ))}
         </nav>
 
-        <div className="border-t border-slate-100 p-3">
+        <div className="space-y-2 border-t border-slate-100 p-3">
+          <LanguageSegmented />
           <div className="flex items-center gap-2.5 rounded-xl px-2 py-2">
             <Avatar name={displayName(name, role)} size="sm" />
             <span className="min-w-0 flex-1 leading-tight">
               <span className="block truncate text-sm font-medium text-slate-800">{displayName(name, role)}</span>
-              <span className="block text-xs text-slate-400">{ROLE_LABEL[role] ?? role}</span>
+              <span className="block text-xs text-slate-400">{roleLabel(role, t)}</span>
             </span>
             <NotificationsToggle />
             <form action={signOutAction}>
               <button
                 type="submit"
-                title="Sign out"
-                aria-label="Sign out"
+                title={t("nav.signOut")}
+                aria-label={t("nav.signOut")}
                 className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
               >
                 <LogOut size={17} />

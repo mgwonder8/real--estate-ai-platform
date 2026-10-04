@@ -1,3 +1,7 @@
+"use client";
+
+import { useT } from "@/lib/i18n/client";
+
 const PALETTE = [
   "bg-rose-100 text-rose-700",
   "bg-amber-100 text-amber-700",
@@ -49,10 +53,11 @@ export function AvatarStack({
   max?: number;
   size?: keyof typeof SIZES;
 }) {
+  const t = useT();
   const visible = names.slice(0, max);
   const extra = names.length - visible.length;
   if (names.length === 0) {
-    return <span className="text-xs text-slate-400">Unassigned</span>;
+    return <span className="text-xs text-slate-400">{t("common.unassigned")}</span>;
   }
   return (
     <span className="flex items-center -space-x-1.5" title={names.join(", ")}>

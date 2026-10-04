@@ -5,6 +5,7 @@ import { listStaff } from "@/lib/data/staff";
 import { listSites } from "@/lib/data/sites";
 import { listAllTaskUpdates } from "@/lib/data/task-updates";
 import { generateStaffPerformanceSummary, generatePortfolioInsights } from "@/lib/ai/openai";
+import { getT } from "@/lib/i18n/server";
 
 export type AiTextState = { status: "idle" } | { status: "error"; message: string } | { status: "success"; text: string };
 
@@ -15,11 +16,12 @@ function isOverdue(task: { deadline: string; status: string }): boolean {
 }
 
 export async function generateStaffSummaryAction(_prev: AiTextState, formData: FormData): Promise<AiTextState> {
+  const t = await getT();
   const staffId = String(formData.get("staffId") ?? "");
   try {
     const [staff, tasks, updates] = await Promise.all([listStaff(), listTasks(), listAllTaskUpdates()]);
     const person = staff.find((s) => s.id === staffId);
-    if (!person) return { status: "error", message: "Staff member not found" };
+    if (!person) return { status: "error", message: t("in.personNotFound") };
 
     const theirTasks = tasks.filter((t) => t.assigneeIds.includes(staffId));
     const completedAtByTask = new Map<string, string>();
@@ -37,22 +39,24 @@ export async function generateStaffSummaryAction(_prev: AiTextState, formData: F
     });
 
     if (taskSummaries.length === 0) {
-      return { status: "success", text: `${person.name} has no tasks recorded yet.` };
+      return { status: "success", text: t("in.noTasksSummary", { name: person.name }) };
     }
 
     const text = await generateStaffPerformanceSummary({
+      language: t.locale,
       staffName: person.name,
       role: person.role,
       taskSummaries,
     });
     return { status: "success", text };
   } catch (err) {
-    return { status: "error", message: err instanceof Error ? err.message : "AI summary failed" };
+    return { status: "error", message: err instanceof Error ? err.message : t("in.aiSummaryFailed") };
   }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- useActionState requires this signature
 export async function generatePortfolioInsightsAction(_prev: AiTextState, _formData: FormData): Promise<AiTextState> {
+  const t = await getT();
   try {
     const [sites, tasks] = await Promise.all([listSites(), listTasks()]);
     const staff = await listStaff();
@@ -82,12 +86,12 @@ export async function generatePortfolioInsightsAction(_prev: AiTextState, _formD
       }));
 
     if (tasks.length === 0) {
-      return { status: "success", text: "No tasks yet. Insights will appear once work starts." };
+      return { status: "success", text: t("in.noTasksBriefing") };
     }
 
-    const text = await generatePortfolioInsights({ siteSummaries, overdueTasks });
+    const text = await generatePortfolioInsights({ language: t.locale, siteSummaries, overdueTasks });
     return { status: "success", text };
   } catch (err) {
-    return { status: "error", message: err instanceof Error ? err.message : "AI summary failed" };
+    return { status: "error", message: err instanceof Error ? err.message : t("in.aiSummaryFailed") };
   }
 }

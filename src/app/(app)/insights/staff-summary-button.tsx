@@ -2,11 +2,13 @@
 
 import { useActionState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 import { generateStaffSummaryAction, type AiTextState } from "@/app/(app)/insights/actions";
 
 const initialState: AiTextState = { status: "idle" };
 
 export function StaffSummaryButton({ staffId }: { staffId: string }) {
+  const t = useT();
   const [state, formAction, pending] = useActionState(generateStaffSummaryAction, initialState);
 
   return (
@@ -22,7 +24,7 @@ export function StaffSummaryButton({ staffId }: { staffId: string }) {
             className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1 text-[13px] font-medium text-brand-navy/70 hover:bg-slate-100 hover:text-brand-navy disabled:opacity-60 sm:min-h-0 sm:px-2 sm:text-xs"
           >
             {pending ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-            AI summary
+            {t("in.aiSummary")}
           </button>
         </form>
       )}

@@ -5,6 +5,7 @@ import { listMessagesAfter, parseChannel, sendMessage } from "@/lib/data/message
 import { getStaff } from "@/lib/data/staff";
 import { notifyManyStaff } from "@/lib/push/send";
 import { saveChatFileToTask, type SavedToTask } from "@/lib/chat-task-files";
+import { getT } from "@/lib/i18n/server";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -20,8 +21,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const t = await getT();
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: t("common.notAuthenticated") }, { status: 401 });
 
   const body = await req.json();
   const { toStaffId, message, attachment } = body;
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
   const taskId = channel === "team" ? body.taskId : undefined;
   const trimmed = String(message ?? "").trim();
   if (!toStaffId || (!trimmed && !attachment?.url)) {
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    return NextResponse.json({ error: t("cw.missingFields") }, { status: 400 });
   }
 
   let saved: SavedToTask | null = null;
@@ -43,15 +45,15 @@ export async function POST(req: NextRequest) {
         attachment,
       });
     } catch (err) {
-      return NextResponse.json({ error: err instanceof Error ? err.message : "Could not save to task" }, { status: 400 });
+      return NextResponse.json({ error: err instanceof Error ? err.message : t("cw.couldNotSave") }, { status: 400 });
     }
   }
 
   let msg;
   try {
     msg = await sendMessage(session.user.id, toStaffId, trimmed, attachment, saved?.taskId, channel);
-  } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Message not sent" }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: channel === "personal" ? t("cw.privateNotReady") : t("cw.notSent") }, { status: 500 });
   }
 
   if (saved) {

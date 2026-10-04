@@ -13,9 +13,11 @@ import { listAllQueries } from "@/lib/data/queries";
 import { STATUS_META, STATUS_ORDER, TASK_VIEW, isOpen, isOverdue, statusCounts, timeAgo } from "@/lib/task-meta";
 import { SiteBriefForm } from "@/app/(app)/sites/[id]/site-brief-form";
 import { SiteBoard } from "@/app/(app)/sites/[id]/site-board";
+import { getT } from "@/lib/i18n/server";
 
 export default async function SiteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const tr = await getT();
   const [site, tasks, staff, queries] = await Promise.all([getSite(id), listTasksForSite(id), listStaff(), listAllQueries()]);
   if (!site) notFound();
 
@@ -43,7 +45,7 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
         }
         actions={
           <ButtonLink href={`/tasks/new?siteId=${site.id}`}>
-            <Plus size={16} /> New task
+            <Plus size={16} /> {tr("nav.newTask")}
           </ButtonLink>
         }
       />
@@ -54,7 +56,7 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
             <ProgressRing value={pct} size={76} stroke={7} />
             <div className="min-w-0 flex-1">
               <p className="text-sm text-slate-500">
-                <b className="text-2xl font-semibold text-slate-900">{counts.approved}</b> of {tasks.length} tasks done
+                <b className="text-2xl font-semibold text-slate-900">{counts.approved}/{tasks.length}</b> {tr("sd.tasksDone")}
               </p>
               <StatusBar counts={counts} className="mt-3 h-2.5" />
             </div>
@@ -69,7 +71,7 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
                 <p className="text-xl font-semibold text-slate-900">{counts[s]}</p>
                 <p className={`flex items-center gap-1.5 text-xs font-medium ${STATUS_META[s].text}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${STATUS_META[s].dot}`} />
-                  {STATUS_META[s].label}
+                  {tr(`status.${s}` as const)}
                 </p>
               </Link>
             ))}
@@ -80,16 +82,16 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
               <p className={`text-xl font-semibold ${late ? "text-red-600" : "text-slate-900"}`}>{late}</p>
               <p className={`flex items-center gap-1.5 text-xs font-medium ${late ? "text-red-700" : "text-slate-500"}`}>
                 <span className={`h-1.5 w-1.5 rounded-full ${late ? "bg-red-500" : "bg-slate-300"}`} />
-                Late
+                {tr("sd.late")}
               </p>
             </Link>
           </div>
         </Card>
 
         <Card>
-          <CardHeader title="Team" action={<span className="text-xs text-slate-400">{people.length}</span>} />
+          <CardHeader title={tr("sd.team")} action={<span className="text-xs text-slate-400">{people.length}</span>} />
           <div className="px-2 pb-2">
-            {people.length === 0 && <p className="px-3 py-6 text-center text-sm text-slate-400">No one yet</p>}
+            {people.length === 0 && <p className="px-3 py-6 text-center text-sm text-slate-400">{tr("sd.noOne")}</p>}
             {people.map((p) => {
               const mine = tasks.filter((t) => t.assigneeIds.includes(p.id));
               const open = mine.filter(isOpen).length;
@@ -110,8 +112,8 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
                     )}
                   </div>
                   <div className="flex gap-1 text-xs font-medium">
-                    <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-amber-700" title="Open">{open}</span>
-                    <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-emerald-700" title="Done">{done}</span>
+                    <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-amber-700" title={tr("sd.statusOpen")}>{open}</span>
+                    <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-emerald-700" title={tr("views.done")}>{done}</span>
                   </div>
                 </Link>
               );
@@ -121,13 +123,13 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
       </div>
 
       <div className="mb-5">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900">Tasks</h2>
+        <h2 className="mb-3 text-sm font-semibold text-slate-900">{tr("sd.tasks")}</h2>
         <SiteBoard tasks={tasks} people={people} staffById={staffById} />
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card>
-          <CardHeader title="Project brief" />
+          <CardHeader title={tr("sd.brief")} />
           <div className="px-5 pb-5">
             <SiteBriefForm site={site} />
           </div>
@@ -135,17 +137,17 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
 
         <Card>
           <CardHeader
-            title="Queries"
+            title={tr("sd.queries")}
             action={
               openQueries.length > 0 && (
-                <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">{openQueries.length} open</span>
+                <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">{tr("sd.openCount", { n: openQueries.length })}</span>
               )
             }
           />
           <div className="px-2 pb-2">
             {siteQueries.length === 0 && (
               <p className="flex items-center justify-center gap-2 px-3 py-6 text-sm text-slate-400">
-                <MessageCircleQuestion size={16} /> No queries
+                <MessageCircleQuestion size={16} /> {tr("sd.noQueries")}
               </p>
             )}
             {siteQueries.slice(0, 5).map((q) => (
@@ -153,14 +155,14 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
                 <Avatar name={staffById[q.raisedBy]?.name ?? "?"} size="sm" />
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-2 text-sm text-slate-800">{q.message}</p>
-                  <p className="mt-0.5 text-xs text-slate-400">{timeAgo(q.createdAt)}</p>
+                  <p className="mt-0.5 text-xs text-slate-400">{timeAgo(q.createdAt, tr)}</p>
                 </div>
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                     q.status === "open" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
                   }`}
                 >
-                  {q.status === "open" ? "Open" : "Replied"}
+                  {q.status === "open" ? tr("sd.statusOpen") : tr("sd.statusReplied")}
                 </span>
               </Link>
             ))}

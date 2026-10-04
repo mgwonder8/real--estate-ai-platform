@@ -3,9 +3,11 @@ import { ArrowUpRight, MapPin } from "lucide-react";
 import { AvatarStack } from "@/components/ui/avatar";
 import { ProgressRing, StatusBar } from "@/components/ui/progress";
 import { isOverdue, statusCounts } from "@/lib/task-meta";
+import { getT } from "@/lib/i18n/server";
 import type { Site, Staff, Task } from "@/lib/data/types";
 
-export function SiteCard({ site, tasks, people }: { site: Site; tasks: Task[]; people: Staff[] }) {
+export async function SiteCard({ site, tasks, people }: { site: Site; tasks: Task[]; people: Staff[] }) {
+  const t = await getT();
   const counts = statusCounts(tasks);
   const late = tasks.filter(isOverdue).length;
   const pct = tasks.length ? (counts.approved / tasks.length) * 100 : 0;
@@ -33,9 +35,9 @@ export function SiteCard({ site, tasks, people }: { site: Site; tasks: Task[]; p
       <div className="mt-5 flex items-center gap-4">
         <ProgressRing value={pct} size={52} stroke={5} />
         <div className="grid flex-1 grid-cols-3 gap-2 text-center">
-          <Metric value={open} label="Open" tone="text-amber-600" />
-          <Metric value={counts.completed} label="To approve" tone="text-emerald-600" />
-          <Metric value={late} label="Late" tone={late ? "text-red-600" : "text-slate-400"} />
+          <Metric value={open} label={t("site.open")} tone="text-amber-600" />
+          <Metric value={counts.completed} label={t("site.toApprove")} tone="text-emerald-600" />
+          <Metric value={late} label={t("site.late")} tone={late ? "text-red-600" : "text-slate-400"} />
         </div>
       </div>
 
@@ -43,7 +45,7 @@ export function SiteCard({ site, tasks, people }: { site: Site; tasks: Task[]; p
 
       <div className="mt-4 flex items-center justify-between">
         <AvatarStack names={people.map((p) => p.name)} max={4} size="sm" />
-        <span className="text-xs text-slate-400">{tasks.length} tasks</span>
+        <span className="text-xs text-slate-400">{t.n("site.tasks", tasks.length)}</span>
       </div>
     </Link>
   );

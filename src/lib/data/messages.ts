@@ -129,7 +129,7 @@ export async function sendMessage(
   if (channel === "personal") {
     const { headers } = await readTable(TAB);
     // Without the column a private message would be stored as a team message.
-    if (!headers.includes("channel")) throw new Error("Private chat is not ready yet, please try again");
+    if (!headers.includes("channel")) throw new Error("channel column missing");
   }
   const msg: Message = {
     id: newId("msg"),

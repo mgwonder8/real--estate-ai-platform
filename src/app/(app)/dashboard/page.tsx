@@ -13,10 +13,13 @@ import { isAiEnabled } from "@/lib/ai/openai";
 import { isOpen, isOverdue, sortByUrgency, statusCounts, firstName, serialLabel } from "@/lib/task-meta";
 import { assignerName } from "@/lib/roles";
 import { greetingIST, greetingName } from "@/lib/greeting";
+import { getT } from "@/lib/i18n/server";
+import { LOCALE_TAG } from "@/lib/i18n/config";
 import { auth } from "@/auth";
 import { AiTaskChat } from "@/app/(app)/dashboard/ai-task-chat";
 
 export default async function DashboardPage() {
+  const tr = await getT();
   const [session, sites, tasks, allStaff, queries] = await Promise.all([auth(), listSites(), listTasks(), listStaff(), listAllQueries()]);
   const staff = allStaff.filter((s) => s.role !== "owner" && s.active);
   const staffById = Object.fromEntries(allStaff.map((s) => [s.id, s]));
@@ -28,7 +31,7 @@ export default async function DashboardPage() {
   const openQueries = queries.filter((q) => q.status === "open");
   const attention = [...review, ...late].slice(0, 6);
 
-  const today = new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Kolkata" }).format(new Date());
+  const today = new Intl.DateTimeFormat(LOCALE_TAG[tr.locale], { weekday: "long", day: "numeric", month: "long", timeZone: "Asia/Kolkata" }).format(new Date());
 
   const workload = staff
     .map((p) => {
@@ -39,10 +42,10 @@ export default async function DashboardPage() {
     .sort((a, b) => b.open - a.open);
 
   const tiles = [
-    { key: "open", label: "Open", value: counts.pending + counts.in_progress, icon: ListTodo, tone: "from-sky-50 to-white text-sky-800", iconTone: "bg-sky-100 text-sky-700" },
-    { key: "late", label: "Late", value: late.length, icon: Clock, tone: "from-red-50 to-white text-red-700", iconTone: "bg-red-100 text-red-600" },
-    { key: "review", label: "Awaiting approval", value: counts.completed, icon: Hourglass, tone: "from-emerald-50/60 to-white text-emerald-700", iconTone: "bg-emerald-50 text-emerald-600" },
-    { key: "done", label: "Done", value: counts.approved, icon: CheckCircle2, tone: "from-emerald-50 to-white text-emerald-800", iconTone: "bg-emerald-100 text-emerald-700" },
+    { key: "open", label: tr("views.open"), value: counts.pending + counts.in_progress, icon: ListTodo, tone: "from-sky-50 to-white text-sky-800", iconTone: "bg-sky-100 text-sky-700" },
+    { key: "late", label: tr("views.late"), value: late.length, icon: Clock, tone: "from-red-50 to-white text-red-700", iconTone: "bg-red-100 text-red-600" },
+    { key: "review", label: tr("views.review"), value: counts.completed, icon: Hourglass, tone: "from-emerald-50/60 to-white text-emerald-700", iconTone: "bg-emerald-50 text-emerald-600" },
+    { key: "done", label: tr("views.done"), value: counts.approved, icon: CheckCircle2, tone: "from-emerald-50 to-white text-emerald-800", iconTone: "bg-emerald-100 text-emerald-700" },
   ];
 
   return (
@@ -52,14 +55,14 @@ export default async function DashboardPage() {
         <div className="relative">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">{today}</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-            {greetingIST()}, {greetingName(session?.user.name)}
+            {greetingIST(tr)}, {greetingName(session?.user.name)}
           </h1>
-          <p className="mb-5 mt-5 text-sm font-medium text-brand-gold">Tell your task</p>
+          <p className="mb-5 mt-5 text-sm font-medium text-brand-gold">{tr("dash.tell")}</p>
           {isAiEnabled() ? (
             <AiTaskChat sites={sites} staff={staff} />
           ) : (
             <Link href="/tasks/new" className="inline-flex h-12 items-center gap-2 rounded-2xl bg-white px-5 text-sm font-medium text-brand-navy">
-              New task <ArrowRight size={16} />
+              {tr("nav.newTask")} <ArrowRight size={16} />
             </Link>
           )}
         </div>
@@ -87,9 +90,9 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Sites</h2>
+            <h2 className="text-sm font-semibold text-slate-900">{tr("dash.sites")}</h2>
             <Link href="/sites" className="-my-3 -mr-2 flex min-h-11 items-center px-2 text-[13px] font-medium text-slate-500 hover:text-brand-navy">
-              See all
+              {tr("dash.seeAll")}
             </Link>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -105,7 +108,7 @@ export default async function DashboardPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader
-              title="Needs you"
+              title={tr("dash.needsYou")}
               action={
                 attention.length > 0 && (
                   <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">{review.length + late.length}</span>
@@ -116,7 +119,7 @@ export default async function DashboardPage() {
               {attention.length === 0 && openQueries.length === 0 && (
                 <p className="flex flex-col items-center gap-2 py-8 text-sm text-slate-400">
                   <PartyPopper size={22} className="text-emerald-500" />
-                  All clear
+                  {tr("dash.allClear")}
                 </p>
               )}
               {attention.map((t) => (
@@ -134,12 +137,12 @@ export default async function DashboardPage() {
                       {t.title}
                     </p>
                     <p className="break-words text-xs text-slate-500">
-                      {siteById[t.siteId]?.name} · {assignerName(staffById[t.createdBy])} to{" "}
+                      {siteById[t.siteId]?.name} · {assignerName(staffById[t.createdBy], tr)} →{" "}
                       {t.assigneeIds.map((id) => firstName(staffById[id]?.name)).join(", ")}
                     </p>
                   </div>
                   {t.status === "completed" ? (
-                    <span className="shrink-0 text-xs font-medium text-emerald-600">Approve</span>
+                    <span className="shrink-0 text-xs font-medium text-emerald-600">{tr("dash.approve")}</span>
                   ) : (
                     <DueBadge task={t} />
                   )}
@@ -151,7 +154,7 @@ export default async function DashboardPage() {
                     <MessageCircleQuestion size={15} />
                   </span>
                   <p className="flex-1 text-sm font-medium text-slate-900">
-                    {openQueries.length} open {openQueries.length === 1 ? "query" : "queries"}
+                    {tr.n("dash.openQueries", openQueries.length)}
                   </p>
                   <ArrowRight size={15} className="text-slate-300" />
                 </Link>
@@ -161,7 +164,7 @@ export default async function DashboardPage() {
 
           {workload.length > 0 && (
             <Card>
-              <CardHeader title="Team" action={<Link href="/staff" className="-my-3 -mr-2 flex min-h-11 items-center px-2 text-[13px] font-medium text-slate-500 hover:text-brand-navy">See all</Link>} />
+              <CardHeader title={tr("dash.team")} action={<Link href="/staff" className="-my-3 -mr-2 flex min-h-11 items-center px-2 text-[13px] font-medium text-slate-500 hover:text-brand-navy">{tr("dash.seeAll")}</Link>} />
               <div className="space-y-1 px-2 pb-3">
                 {workload.map(({ p, open, total, done }) => (
                   <Link key={p.id} href={`/tasks?staff=${p.id}`} className="flex items-center gap-3 rounded-xl px-3 py-2 transition hover:bg-slate-50">
@@ -170,7 +173,7 @@ export default async function DashboardPage() {
                       <div className="flex items-baseline justify-between gap-2">
                         <p className="break-words text-sm font-medium text-slate-900">{p.name}</p>
                         <span className="shrink-0 text-xs text-slate-500">
-                          <b className="font-semibold text-amber-600">{open}</b> open
+                          <b className="font-semibold text-amber-600">{open}</b> {tr("dash.openLabel")}
                         </span>
                       </div>
                       <div className="mt-1.5">

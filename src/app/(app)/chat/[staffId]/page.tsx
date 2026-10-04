@@ -4,7 +4,8 @@ import Link from "next/link";
 import { ArrowLeft, Phone } from "lucide-react";
 import { auth } from "@/auth";
 import { Avatar } from "@/components/ui/avatar";
-import { ROLE_LABEL } from "@/lib/roles";
+import { roleLabel } from "@/lib/roles";
+import { getT } from "@/lib/i18n/server";
 import { getStaff } from "@/lib/data/staff";
 import { listTasks } from "@/lib/data/tasks";
 import { listMessagesBetween, markConversationRead } from "@/lib/data/messages";
@@ -13,6 +14,7 @@ import { ChatWindow, type TaskOption } from "./chat-window";
 const STATUS_RANK: Record<string, number> = { in_progress: 0, pending: 1, completed: 2, approved: 3 };
 
 export default async function ChatConversationPage({ params }: { params: Promise<{ staffId: string }> }) {
+  const tr = await getT();
   const session = await auth();
   const { staffId } = await params;
   const me = session!.user.id;
@@ -54,7 +56,7 @@ export default async function ChatConversationPage({ params }: { params: Promise
       <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-3 py-2.5 lg:px-4 lg:py-3.5">
         <Link
           href="/chat"
-          aria-label="Back to chats"
+          aria-label={tr("chat.backToChats")}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 lg:hidden"
         >
           <ArrowLeft size={18} />
@@ -67,12 +69,12 @@ export default async function ChatConversationPage({ params }: { params: Promise
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-slate-900">{partner.name}</p>
-          <p className="text-xs text-slate-500">{ROLE_LABEL[partner.role] ?? partner.role}</p>
+          <p className="text-xs text-slate-500">{roleLabel(partner.role, tr)}</p>
         </div>
         {partner.phone && (
           <a
             href={`tel:${partner.phone}`}
-            aria-label={`Call ${partner.name}`}
+            aria-label={tr("chat.call", { name: partner.name })}
             className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition hover:bg-brand-navy hover:text-white"
           >
             <Phone size={17} />

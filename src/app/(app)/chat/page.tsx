@@ -6,18 +6,13 @@ import { Avatar } from "@/components/ui/avatar";
 import { ChatSwitch } from "@/components/chat-switch";
 import { listStaff } from "@/lib/data/staff";
 import { countUnread, listConversations } from "@/lib/data/messages";
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return "now";
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
-}
+import { roleLabel } from "@/lib/roles";
+import { timeAgo } from "@/lib/task-meta";
+import { previewText } from "@/lib/chat-format";
+import { getT } from "@/lib/i18n/server";
 
 export default async function ChatPage() {
+  const t = await getT();
   const session = await auth();
   const [allStaff, conversations, unread] = await Promise.all([
     listStaff(),
@@ -32,12 +27,12 @@ export default async function ChatPage() {
 
   return (
     <>
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight text-slate-900">Chat</h1>
+      <h1 className="mb-4 text-2xl font-semibold tracking-tight text-slate-900">{t("chat.title")}</h1>
       <ChatSwitch active="team" teamUnread={unread.team} personalUnread={unread.personal} />
 
       {conversations.length === 0 && newChats.length === 0 && (
         <Card>
-          <EmptyState icon={<MessageCircle size={20} />} title="No conversations yet" />
+          <EmptyState icon={<MessageCircle size={20} />} title={t("chat.none")} />
         </Card>
       )}
 
@@ -66,11 +61,11 @@ export default async function ChatPage() {
                     <p className={`truncate text-sm ${unread ? "font-semibold text-slate-900" : "font-medium text-slate-800"}`}>
                       {p.name}
                     </p>
-                    <span className="shrink-0 text-[11px] text-slate-400">{timeAgo(last.createdAt)}</span>
+                    <span className="shrink-0 text-[11px] text-slate-400">{timeAgo(last.createdAt, t)}</span>
                   </div>
                   <p className={`mt-0.5 truncate text-xs ${unread ? "font-medium text-slate-700" : "text-slate-400"}`}>
-                    {mine ? "You: " : ""}
-                    {last.message || (last.attachmentUrl ? `📎 ${last.attachmentName}` : "")}
+                    {mine ? t("chat.youPrefix") : ""}
+                    {previewText(last.message, t) || (last.attachmentUrl ? `📎 ${last.attachmentName}` : "")}
                   </p>
                 </div>
               </Link>
@@ -81,7 +76,7 @@ export default async function ChatPage() {
 
       {newChats.length > 0 && (
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Start a conversation</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{t("chat.start")}</p>
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100">
             {newChats.map((s) => (
               <Link
@@ -92,7 +87,7 @@ export default async function ChatPage() {
                 <Avatar name={s.name} size="md" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-slate-800">{s.name}</p>
-                  <p className="text-xs text-slate-400">{s.role === "owner" ? "Owner" : s.role === "office_staff" ? "Office" : "Site staff"}</p>
+                  <p className="text-xs text-slate-400">{roleLabel(s.role, t)}</p>
                 </div>
                 <Plus size={16} className="shrink-0 text-slate-400" />
               </Link>

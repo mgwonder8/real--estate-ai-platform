@@ -1,7 +1,10 @@
+"use client";
+
 import { FileText, MapPin, Paperclip } from "lucide-react";
 import { PhotoGrid, type Photo } from "@/components/photo-grid";
 import { fileNameFromUrl, isImageFile, isPdfFile, isProbablyImageUrl } from "@/lib/files";
 import { timeAgo } from "@/lib/task-meta";
+import { useT } from "@/lib/i18n/client";
 
 export type RefFile = { url: string; name: string; type: string; by: string; at: string; viaChat?: boolean };
 export type ProofFile = { photoUrl: string; videoUrl: string; by: string; at: string; notes: string; lat: string; lng: string };
@@ -20,13 +23,14 @@ export function TaskFiles({
   referenceTitle?: string;
   proofTitle?: string;
 }) {
+  const t = useT();
   const refPhotos: Photo[] = [];
   const refDocs: RefFile[] = [];
   for (const r of references) {
     if (isImageFile(r.name, r.type)) {
-      refPhotos.push({ url: r.url, kind: "image", caption: r.by, sub: `${r.viaChat ? "Sent in chat, " : ""}${timeAgo(r.at)}` });
+      refPhotos.push({ url: r.url, kind: "image", caption: r.by, sub: `${r.viaChat ? `${t("tf.sentInChat")}, ` : ""}${timeAgo(r.at, t)}` });
     } else if (r.type.startsWith("video/")) {
-      refPhotos.push({ url: r.url, kind: "video", caption: r.by, sub: timeAgo(r.at) });
+      refPhotos.push({ url: r.url, kind: "video", caption: r.by, sub: timeAgo(r.at, t) });
     } else {
       refDocs.push(r);
     }
@@ -36,11 +40,11 @@ export function TaskFiles({
   const proofDocs: RefFile[] = [];
   const located = proofs.filter((p) => p.lat && p.lng);
   for (const p of proofs) {
-    const sub = `${p.notes === "Sent in chat" ? "Sent in chat, " : ""}${timeAgo(p.at)}`;
+    const sub = `${p.notes === "Sent in chat" ? `${t("tf.sentInChat")}, ` : ""}${timeAgo(p.at, t)}`;
     if (p.videoUrl) proofPhotos.push({ url: p.videoUrl, kind: "video", caption: p.by, sub });
     if (p.photoUrl) {
       if (isProbablyImageUrl(p.photoUrl)) proofPhotos.push({ url: p.photoUrl, kind: "image", caption: p.by, sub });
-      else proofDocs.push({ url: p.photoUrl, name: fileNameFromUrl(p.photoUrl) || "Proof file", type: "", by: p.by, at: p.at });
+      else proofDocs.push({ url: p.photoUrl, name: fileNameFromUrl(p.photoUrl) || t("tf.proofFile"), type: "", by: p.by, at: p.at });
     }
   }
 
@@ -90,7 +94,7 @@ export function TaskFiles({
               rel="noopener noreferrer"
               className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-brand-navy hover:underline"
             >
-              <MapPin size={12} /> Where the last proof was taken
+              <MapPin size={12} /> {t("tf.lastProof")}
             </a>
           )}
         </section>
@@ -100,6 +104,7 @@ export function TaskFiles({
 }
 
 function DocCard({ file }: { file: RefFile }) {
+  const t = useT();
   const pdf = isPdfFile(file.name, file.type);
   return (
     <a
@@ -115,7 +120,7 @@ function DocCard({ file }: { file: RefFile }) {
         <span className="block break-all text-sm font-medium text-slate-800">{file.name}</span>
         <span className="block break-words text-xs text-slate-500">
           {file.by}
-          {file.viaChat ? ", sent in chat" : ""} · {timeAgo(file.at)}
+          {file.viaChat ? `, ${t("tf.sentInChatLower")}` : ""} · {timeAgo(file.at, t)}
         </span>
       </span>
     </a>

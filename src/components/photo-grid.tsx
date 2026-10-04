@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Download, Play, X } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 
 export type Photo = { url: string; kind: "image" | "video"; caption: string; sub?: string };
 
 export function PhotoGrid({ photos, size = "md" }: { photos: Photo[]; size?: "sm" | "md" }) {
+  const t = useT();
   const [open, setOpen] = useState<number | null>(null);
   const close = useCallback(() => setOpen(null), []);
   const step = useCallback(
@@ -75,12 +77,12 @@ export function PhotoGrid({ photos, size = "md" }: { photos: Photo[]; size?: "sm
                 href={current.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Open original"
+                aria-label={t("pg.openOriginal")}
                 className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10"
               >
                 <Download size={18} />
               </a>
-              <button onClick={close} aria-label="Close" className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
+              <button onClick={close} aria-label={t("pg.close")} className="flex h-11 w-11 items-center justify-center rounded-full hover:bg-white/10">
                 <X size={20} />
               </button>
             </div>
@@ -96,14 +98,14 @@ export function PhotoGrid({ photos, size = "md" }: { photos: Photo[]; size?: "sm
               <>
                 <button
                   onClick={() => step(-1)}
-                  aria-label="Previous"
+                  aria-label={t("pg.previous")}
                   className="absolute left-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
                 >
                   <ChevronLeft size={22} />
                 </button>
                 <button
                   onClick={() => step(1)}
-                  aria-label="Next"
+                  aria-label={t("pg.next")}
                   className="absolute right-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
                 >
                   <ChevronRight size={22} />

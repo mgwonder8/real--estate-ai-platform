@@ -4,10 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, ListChecks, Building2, MessageCircle, Plus, ClipboardList, Lock, type LucideIcon } from "lucide-react";
 import { isActivePath } from "@/components/app-sidebar";
+import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n/messages";
 
 type Item = {
   href: string;
-  label: string;
+  label: MessageKey;
   icon: LucideIcon;
   primary?: boolean;
   badge?: "chat" | "personal" | "both";
@@ -17,22 +19,23 @@ type Item = {
 
 // The owner's bar is full, so its Chat tab covers both team and personal (switch at the top of the page).
 const ownerItems: Item[] = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/tasks", label: "Tasks", icon: ListChecks },
-  { href: "/tasks/new", label: "New task", icon: Plus, primary: true },
-  { href: "/sites", label: "Sites", icon: Building2 },
-  { href: "/chat", label: "Chat", icon: MessageCircle, badge: "both", also: ["/personal"] },
+  { href: "/dashboard", label: "nav.home", icon: LayoutDashboard },
+  { href: "/tasks", label: "nav.tasks", icon: ListChecks },
+  { href: "/tasks/new", label: "nav.newTask", icon: Plus, primary: true },
+  { href: "/sites", label: "nav.sites", icon: Building2 },
+  { href: "/chat", label: "nav.chat", icon: MessageCircle, badge: "both", also: ["/personal"] },
 ];
 
 const staffItems: Item[] = [
-  { href: "/site", label: "My tasks", icon: ClipboardList },
-  { href: "/chat", label: "Chat", icon: MessageCircle, badge: "chat" },
-  { href: "/personal", label: "Personal", icon: Lock, badge: "personal" },
+  { href: "/site", label: "nav.myTasks", icon: ClipboardList },
+  { href: "/chat", label: "nav.chat", icon: MessageCircle, badge: "chat" },
+  { href: "/personal", label: "nav.personal", icon: Lock, badge: "personal" },
 ];
 
 const COLS: Record<number, string> = { 3: "grid-cols-3", 5: "grid-cols-5" };
 
 export function MobileNav({ role, unreadChats, unreadPersonal }: { role: string; unreadChats: number; unreadPersonal: number }) {
+  const t = useT();
   const pathname = usePathname();
   const items = role === "site_staff" ? staffItems : ownerItems;
 
@@ -43,7 +46,7 @@ export function MobileNav({ role, unreadChats, unreadPersonal }: { role: string;
           const Icon = item.icon;
           if (item.primary) {
             return (
-              <Link key={item.href} href={item.href} aria-label={item.label} className="flex items-center justify-center py-2">
+              <Link key={item.href} href={item.href} aria-label={t(item.label)} className="flex items-center justify-center py-2">
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-navy text-white shadow-md shadow-brand-navy/20 transition active:scale-95">
                   <Icon size={22} strokeWidth={2.5} />
                 </span>
@@ -71,7 +74,7 @@ export function MobileNav({ role, unreadChats, unreadPersonal }: { role: string;
                   </span>
                 )}
               </span>
-              {item.label}
+              {t(item.label)}
             </Link>
           );
         })}

@@ -4,9 +4,11 @@ import { PageHeader } from "@/components/ui/page-header";
 import { getStaff } from "@/lib/data/staff";
 import { listSites } from "@/lib/data/sites";
 import { EditStaffForm } from "./edit-staff-form";
+import { getT } from "@/lib/i18n/server";
 
 export default async function EditStaffPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const t = await getT();
 
   const [staff, sites] = await Promise.all([getStaff(id), listSites()]);
   if (!staff) notFound();
@@ -14,7 +16,7 @@ export default async function EditStaffPage({ params }: { params: Promise<{ id: 
   return (
     <>
       <div className="mx-auto max-w-xl">
-        <PageHeader back="/staff" title={`Edit ${staff.name}`} />
+        <PageHeader back="/staff" title={t("es.title", { name: staff.name })} />
         <Card className="p-5 sm:p-6">
           <EditStaffForm staff={staff} sites={sites} />
         </Card>

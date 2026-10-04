@@ -3,16 +3,18 @@
 import { useRef } from "react";
 import { SendHorizontal } from "lucide-react";
 import { addTaskCommentAction } from "@/app/(app)/tasks/actions";
+import { useT } from "@/lib/i18n/client";
 
 export function CommentBox({
   taskId,
   action = addTaskCommentAction,
-  placeholder = "Write a message",
+  placeholder,
 }: {
   taskId: string;
   action?: (fd: FormData) => Promise<void>;
   placeholder?: string;
 }) {
+  const t = useT();
   const formRef = useRef<HTMLFormElement>(null);
   return (
     <form
@@ -28,12 +30,12 @@ export function CommentBox({
         name="message"
         required
         autoComplete="off"
-        placeholder={placeholder}
+        placeholder={placeholder ?? t("cm.placeholder")}
         className="h-11 min-w-0 flex-1 rounded-xl bg-slate-50 px-4 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/15"
       />
       <button
         type="submit"
-        aria-label="Send"
+        aria-label={t("cm.send")}
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-navy text-white transition hover:bg-brand-navy-soft active:scale-95"
       >
         <SendHorizontal size={17} />

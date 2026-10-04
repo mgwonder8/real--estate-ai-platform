@@ -3,13 +3,16 @@ import { ChevronRight, Lock } from "lucide-react";
 import { auth } from "@/auth";
 import { Avatar } from "@/components/ui/avatar";
 import { ChatSwitch } from "@/components/chat-switch";
-import { ROLE_LABEL } from "@/lib/roles";
+import { roleLabel } from "@/lib/roles";
+import { getT } from "@/lib/i18n/server";
 import { listStaff } from "@/lib/data/staff";
 import { countUnread, listConversations } from "@/lib/data/messages";
 import { listPersonalTasksFor } from "@/lib/data/personal-tasks";
 import { timeAgo } from "@/lib/task-meta";
+import { previewText } from "@/lib/chat-format";
 
 export default async function PersonalPage() {
+  const tr = await getT();
   const session = await auth();
   const me = session!.user.id;
   const [staff, convos, tasks, unread] = await Promise.all([
@@ -33,7 +36,7 @@ export default async function PersonalPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-4 text-2xl font-semibold tracking-tight text-slate-900">Chat</h1>
+      <h1 className="mb-4 text-2xl font-semibold tracking-tight text-slate-900">{tr("chat.title")}</h1>
       <ChatSwitch active="personal" teamUnread={unread.team} personalUnread={unread.personal} />
 
       <div className="mb-5 flex items-start gap-3 rounded-2xl bg-brand-navy px-4 py-3.5 text-white">
@@ -41,9 +44,9 @@ export default async function PersonalPage() {
           <Lock size={17} />
         </span>
         <div>
-          <p className="text-sm font-semibold">Private between two people</p>
+          <p className="text-sm font-semibold">{tr("pe.bannerTitle")}</p>
           <p className="mt-0.5 text-xs leading-relaxed text-slate-300">
-            Tasks and messages here are seen only by you and the other person. They never appear on site task lists or reports.
+            {tr("pe.bannerBody")}
           </p>
         </div>
       </div>
@@ -52,7 +55,7 @@ export default async function PersonalPage() {
         <div className="mb-6 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">
           {active.map(({ p, convo, open }) => {
             const preview = convo
-              ? `${convo.last.fromId === me ? "You: " : ""}${convo.last.message || (convo.last.attachmentUrl ? convo.last.attachmentName || "File" : "")}`
+              ? `${convo.last.fromId === me ? tr("chat.youPrefix") : ""}${previewText(convo.last.message, tr) || (convo.last.attachmentUrl ? convo.last.attachmentName || tr("common.file") : "")}`
               : "";
             return (
               <Link key={p.id} href={`/personal/${p.id}`} className="flex items-center gap-3 px-4 py-3.5 transition hover:bg-slate-50 active:bg-slate-100">
@@ -67,12 +70,12 @@ export default async function PersonalPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
                     <p className={`truncate text-sm ${convo?.unread ? "font-semibold text-slate-900" : "font-medium text-slate-800"}`}>{p.name}</p>
-                    {convo && <span className="shrink-0 text-[11px] text-slate-400">{timeAgo(convo.last.createdAt)}</span>}
+                    {convo && <span className="shrink-0 text-[11px] text-slate-400">{timeAgo(convo.last.createdAt, tr)}</span>}
                   </div>
                   <p className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
                     {open.length > 0 && (
                       <span className="shrink-0 rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-700">
-                        {open.length} open {open.length === 1 ? "task" : "tasks"}
+                        {tr.n("pe.openTasks", open.length)}
                       </span>
                     )}
                     <span className="truncate text-slate-400">{preview}</span>
@@ -87,14 +90,14 @@ export default async function PersonalPage() {
 
       {fresh.length > 0 && (
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Start a private thread</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{tr("pe.startThread")}</p>
           <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">
             {fresh.map(({ p }) => (
               <Link key={p.id} href={`/personal/${p.id}`} className="flex items-center gap-3 px-4 py-3 transition hover:bg-slate-50 active:bg-slate-100">
                 <Avatar name={p.name} size="md" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-slate-800">{p.name}</p>
-                  <p className="text-xs text-slate-400">{ROLE_LABEL[p.role] ?? p.role}</p>
+                  <p className="text-xs text-slate-400">{roleLabel(p.role, tr)}</p>
                 </div>
                 <Lock size={14} className="shrink-0 text-slate-300" />
               </Link>

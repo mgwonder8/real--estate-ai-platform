@@ -1,3 +1,6 @@
+"use client";
+
+import { useT } from "@/lib/i18n/client";
 import { STATUS_META, STATUS_ORDER } from "@/lib/task-meta";
 import type { TaskStatus } from "@/lib/data/types";
 
@@ -8,6 +11,7 @@ export function StatusBar({
   counts: Record<TaskStatus, number>;
   className?: string;
 }) {
+  const t = useT();
   const total = STATUS_ORDER.reduce((sum, s) => sum + counts[s], 0);
   if (total === 0) return <div className={`w-full rounded-full bg-slate-100 ${className}`} />;
   return (
@@ -15,7 +19,7 @@ export function StatusBar({
       {STATUS_ORDER.filter((s) => counts[s] > 0).map((s) => (
         <div
           key={s}
-          title={`${STATUS_META[s].label}: ${counts[s]}`}
+          title={`${t(`status.${s}` as const)}: ${counts[s]}`}
           className={`${STATUS_META[s].bar} h-full transition-all`}
           style={{ width: `${(counts[s] / total) * 100}%` }}
         />

@@ -9,14 +9,16 @@ import { addTaskComment } from "@/lib/data/task-comments";
 import { saveProofFile } from "@/lib/storage/upload";
 import { listOfficeAndOwnerStaffIds } from "@/lib/data/staff";
 import { notifyManyStaff } from "@/lib/push/send";
+import { getT } from "@/lib/i18n/server";
 import type { Role } from "@/lib/data/types";
 
 async function requireOwnTask(taskId: string) {
+  const t = await getT();
   const session = await auth();
-  if (!session?.user) throw new Error("Not authenticated");
+  if (!session?.user) throw new Error(t("common.notAuthenticated"));
   const task = await getTask(taskId);
   if (!task || !task.assigneeIds.includes(session.user.id)) {
-    throw new Error("Task not found or not assigned to you");
+    throw new Error(t("ss.notYours"));
   }
   return { session, task };
 }
@@ -31,6 +33,7 @@ export async function submitProofAction(
   formData: FormData
 ): Promise<SubmitProofState> {
   const taskId = String(formData.get("taskId") ?? "");
+  const t = await getT();
 
   try {
     const { session } = await requireOwnTask(taskId);
@@ -60,7 +63,7 @@ export async function submitProofAction(
     revalidatePath("/sites", "layout");
     return { status: "success" };
   } catch (err) {
-    return { status: "error", message: err instanceof Error ? err.message : "Failed to submit proof" };
+    return { status: "error", message: err instanceof Error ? err.message : t("pf.failed") };
   }
 }
 
@@ -87,7 +90,7 @@ export async function addOwnTaskCommentAction(formData: FormData) {
 
 export async function raiseQueryAction(formData: FormData) {
   const session = await auth();
-  if (!session?.user) throw new Error("Not authenticated");
+  if (!session?.user) throw new Error((await getT())("common.notAuthenticated"));
 
   const message = String(formData.get("message") ?? "").trim();
   if (!message) return;

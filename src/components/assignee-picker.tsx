@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { useT } from "@/lib/i18n/client";
 import type { Site, Staff } from "@/lib/data/types";
 
 export function AssigneePicker({
@@ -17,6 +18,7 @@ export function AssigneePicker({
   selected: string[];
   onChange: (ids: string[]) => void;
 }) {
+  const t = useT();
   const siteById = Object.fromEntries(sites.map((s) => [s.id, s]));
   function staffSiteIds(s: Staff) { return [s.siteId, ...s.extraSiteIds].filter(Boolean); }
   const ordered = [...staff].sort((a, b) => {
@@ -29,7 +31,7 @@ export function AssigneePicker({
     onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
   }
 
-  if (staff.length === 0) return <p className="text-sm text-slate-400">No team members yet.</p>;
+  if (staff.length === 0) return <p className="text-sm text-slate-400">{t("ap.none")}</p>;
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -40,7 +42,7 @@ export function AssigneePicker({
         const on = selected.includes(s.id);
         const atSite = !!siteId && staffSiteIds(s).includes(siteId);
         const siteNames = staffSiteIds(s).map((id) => siteById[id]?.name).filter(Boolean);
-        const sub = s.role === "office_staff" ? "Office" : siteNames.join(", ");
+        const sub = s.role === "office_staff" ? t("role.office") : siteNames.join(", ");
         return (
           <button
             key={s.id}

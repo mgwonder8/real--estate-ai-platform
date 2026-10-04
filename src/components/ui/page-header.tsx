@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
+import { getT } from "@/lib/i18n/server";
 
-export function PageHeader({
+export async function PageHeader({
   title,
   subtitle,
   back,
@@ -13,13 +14,14 @@ export function PageHeader({
   back?: string;
   actions?: ReactNode;
 }) {
+  const t = await getT();
   return (
     <div className="mb-5 flex flex-wrap items-start justify-between gap-x-3 gap-y-3 sm:mb-6 sm:items-center">
       <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
         {back && (
           <Link
             href={back}
-            aria-label="Back"
+            aria-label={t("common.back")}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50 active:scale-95"
           >
             <ArrowLeft size={18} />

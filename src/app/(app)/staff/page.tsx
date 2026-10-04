@@ -11,8 +11,9 @@ import { listSites } from "@/lib/data/sites";
 import { listTasks } from "@/lib/data/tasks";
 import { isOpen, isOverdue } from "@/lib/task-meta";
 import { toggleStaffActiveAction } from "@/app/(app)/staff/actions";
+import { roleLabel } from "@/lib/roles";
+import { getT } from "@/lib/i18n/server";
 
-const ROLE_LABEL: Record<string, string> = { owner: "Owner", office_staff: "Office", site_staff: "Site staff" };
 const ROLE_TONE: Record<string, string> = {
   owner: "bg-brand-navy text-white",
   office_staff: "bg-sky-50 text-sky-700",
@@ -20,6 +21,7 @@ const ROLE_TONE: Record<string, string> = {
 };
 
 export default async function StaffPage() {
+  const tr = await getT();
   const session = await auth();
   const [staff, sites, tasks] = await Promise.all([listStaff(), listSites(), listTasks()]);
   const siteById = Object.fromEntries(sites.map((s) => [s.id, s]));
@@ -29,17 +31,17 @@ export default async function StaffPage() {
   return (
     <>
       <PageHeader
-        title="Team"
+        title={tr("st.title")}
         actions={
           <ButtonLink href="/staff/new" variant="secondary">
-            <Plus size={16} /> Add person
+            <Plus size={16} /> {tr("st.add")}
           </ButtonLink>
         }
       />
 
       {staff.length === 0 ? (
         <Card>
-          <EmptyState icon={<Users size={20} />} title="No one added yet" />
+          <EmptyState icon={<Users size={20} />} title={tr("st.none")} />
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -57,20 +59,20 @@ export default async function StaffPage() {
                   <div className="min-w-0 flex-1">
                     <p className="break-words text-base font-semibold text-slate-900">{s.name}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${ROLE_TONE[s.role]}`}>{ROLE_LABEL[s.role]}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${ROLE_TONE[s.role]}`}>{roleLabel(s.role, tr)}</span>
                       {allSiteIds(s).map((sid) => siteById[sid] && (
                         <span key={sid} className="inline-flex items-center gap-1 text-xs text-slate-500">
                           <MapPin size={11} /> {siteById[sid].name}
                         </span>
                       ))}
-                      {!s.active && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">Inactive</span>}
+                      {!s.active && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">{tr("st.inactive")}</span>}
                     </div>
                   </div>
                   <Link
                     href={`/staff/${s.id}/edit`}
                     className="-mr-1 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 active:scale-95"
-                    title="Edit"
-                    aria-label={`Edit ${s.name}`}
+                    title={tr("common.edit")}
+                    aria-label={tr("st.editLabel", { name: s.name })}
                   >
                     <Pencil size={17} />
                   </Link>
@@ -90,10 +92,10 @@ export default async function StaffPage() {
                 {s.role !== "owner" && (
                   <Link href={`/tasks?staff=${s.id}`} className="mt-4 block rounded-xl bg-slate-50 p-3 transition hover:bg-slate-100">
                     <div className="grid grid-cols-4 gap-1 text-center">
-                      <Mini value={open} label="Open" tone="text-amber-600" />
-                      <Mini value={review} label="To approve" tone="text-emerald-600" />
-                      <Mini value={done} label="Done" tone="text-emerald-600" />
-                      <Mini value={late} label="Late" tone="text-red-600" />
+                      <Mini value={open} label={tr("st.open")} tone="text-amber-600" />
+                      <Mini value={review} label={tr("st.toApprove")} tone="text-emerald-600" />
+                      <Mini value={done} label={tr("st.done")} tone="text-emerald-600" />
+                      <Mini value={late} label={tr("st.late")} tone="text-red-600" />
                     </div>
                     <div className="mt-3">
                       <MeterBar value={rate} tone={rate >= 70 ? "emerald" : rate >= 40 ? "amber" : "slate"} />
@@ -106,7 +108,7 @@ export default async function StaffPage() {
                     <input type="hidden" name="id" value={s.id} />
                     <input type="hidden" name="active" value={(!s.active).toString()} />
                     <button type="submit" className="flex h-11 items-center rounded-lg px-3 text-sm font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-700">
-                      {s.active ? "Deactivate" : "Activate"}
+                      {s.active ? tr("st.deactivate") : tr("st.activate")}
                     </button>
                   </form>
                 )}

@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { LOCALE_AI_NAME, type Locale } from "@/lib/i18n/config";
 
 let client: OpenAI | null = null;
 
@@ -45,6 +46,7 @@ export interface ParsedTaskDraft {
 /** Parses a free-text instruction from the owner into a structured task draft. */
 export async function parseTaskFromChat(input: {
   message: string;
+  language: Locale;
   sites: { id: string; name: string }[];
   staff: { id: string; name: string; role: string; siteId: string }[];
 }): Promise<ParsedTaskDraft> {
@@ -87,7 +89,10 @@ export async function parseTaskFromChat(input: {
           "implies it (e.g. names multiple people, or says 'the team' at a site; in that case include everyone tied to that site). " +
           "If a staff member is tied to a specific site, prefer them for tasks at that site. " +
           "Default priority is 'normal' and proofRequired is true unless the instruction clearly implies otherwise. " +
-          "Today is " + todayInIndia() + ". Resolve relative dates like 'Friday' or 'next week' from that." + STYLE,
+          "Today is " + todayInIndia() + ". Resolve relative dates like 'Friday' or 'next week' from that. " +
+          "The instruction may be in English, Hindi or Marathi, and names may be written in Devanagari or Latin letters; match them by sound. " +
+          "Write the title, brief and notes in the same language as the instruction. If that is unclear, write them in " +
+          LOCALE_AI_NAME[input.language] + "." + STYLE,
       },
       {
         role: "user",
@@ -112,6 +117,7 @@ export async function parseTaskFromChat(input: {
 
 /** Generates a narrative performance summary for one staff member from their task/proof history. */
 export async function generateStaffPerformanceSummary(input: {
+  language: Locale;
   staffName: string;
   role: string;
   taskSummaries: { title: string; status: string; priority: string; deadline: string; onTime: boolean | null }[];
@@ -126,11 +132,12 @@ export async function generateStaffPerformanceSummary(input: {
           "You are an operations analyst for a real estate construction company. Write a short (3-5 sentence), " +
           "specific, plain-language performance summary for a staff member based on their task history. " +
           "Mention completion rate, timeliness, and any pattern worth flagging (e.g. recurring delays, high urgent-task load). " +
-          "Be factual and neutral, not generic praise. No markdown headers, just prose." + STYLE,
+          "Be factual and neutral, not generic praise. No markdown headers, just prose. " +
+          "Write in " + LOCALE_AI_NAME[input.language] + ", keeping people's names and task titles as given." + STYLE,
       },
       {
         role: "user",
-        content: JSON.stringify(input),
+        content: JSON.stringify({ ...input, language: undefined }),
       },
     ],
   });
@@ -139,6 +146,7 @@ export async function generateStaffPerformanceSummary(input: {
 
 /** Generates a portfolio-wide risk/insights summary across all sites and tasks. */
 export async function generatePortfolioInsights(input: {
+  language: Locale;
   siteSummaries: { name: string; pending: number; inProgress: number; completed: number; approved: number; overdue: number }[];
   overdueTasks: { title: string; site: string; assignee: string; deadline: string; priority: string }[];
 }): Promise<string> {
@@ -152,11 +160,12 @@ export async function generatePortfolioInsights(input: {
           "You are an operations analyst for a real estate construction company managing multiple active sites. " +
           "Given per-site task counts and a list of overdue tasks, write a short briefing (4-6 sentences or a tight " +
           "bulleted list) for the owner: which sites are at risk, which overdue tasks need attention first, and one " +
-          "concrete recommendation. Be specific with names and numbers from the data given. No markdown headers." + STYLE,
+          "concrete recommendation. Be specific with names and numbers from the data given. No markdown headers. " +
+          "Write in " + LOCALE_AI_NAME[input.language] + ", keeping people's names, site names and task titles as given." + STYLE,
       },
       {
         role: "user",
-        content: JSON.stringify(input),
+        content: JSON.stringify({ ...input, language: undefined }),
       },
     ],
   });

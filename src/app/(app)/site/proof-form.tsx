@@ -5,10 +5,12 @@ import { Camera, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { submitProofAction, type SubmitProofState } from "@/app/(app)/site/actions";
 import { useGeolocation } from "@/lib/use-geolocation";
+import { useT } from "@/lib/i18n/client";
 
 const initialState: SubmitProofState = { status: "idle" };
 
 export function ProofForm({ taskId, required }: { taskId: string; required?: boolean }) {
+  const t = useT();
   const [state, formAction, pending] = useActionState(submitProofAction, initialState);
   const { locating, lat, lng } = useGeolocation();
   const [preview, setPreview] = useState<string | null>(null);
@@ -16,7 +18,7 @@ export function ProofForm({ taskId, required }: { taskId: string; required?: boo
   if (state.status === "success") {
     return (
       <p className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-800">
-        <CheckCircle2 size={16} /> Photo sent
+        <CheckCircle2 size={16} /> {t("pf.sent")}
       </p>
     );
   }
@@ -37,8 +39,8 @@ export function ProofForm({ taskId, required }: { taskId: string; required?: boo
           </span>
         )}
         <span className="text-sm">
-          <span className="block font-medium text-slate-800">{preview ? "Change photo" : "Take photo"}</span>
-          {required && !preview && <span className="text-xs text-amber-700">Needed before done</span>}
+          <span className="block font-medium text-slate-800">{preview ? t("pf.change") : t("pf.take")}</span>
+          {required && !preview && <span className="text-xs text-amber-700">{t("pf.needed")}</span>}
         </span>
         <input
           type="file"
@@ -57,13 +59,13 @@ export function ProofForm({ taskId, required }: { taskId: string; required?: boo
         <>
           <input
             name="notes"
-            placeholder="Note (optional)"
+            placeholder={t("pf.note")}
             className="h-10 w-full rounded-xl border border-slate-200 px-3.5 text-sm focus:border-brand-navy focus:outline-none"
           />
           {state.status === "error" && <p className="text-xs text-red-600">{state.message}</p>}
           <Button type="submit" variant="secondary" disabled={pending} className="w-full">
             {pending && <Loader2 size={15} className="animate-spin" />}
-            {pending && locating ? "Getting location" : "Send photo"}
+            {pending && locating ? t("pf.locating") : t("pf.send")}
           </Button>
         </>
       )}

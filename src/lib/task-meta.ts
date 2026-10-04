@@ -1,14 +1,13 @@
 import type { Task, TaskPriority, TaskStatus } from "@/lib/data/types";
+import { shortDate, type T } from "@/lib/i18n/translate";
 
 export const STATUS_ORDER: TaskStatus[] = ["pending", "in_progress", "completed", "approved"];
 
 export const STATUS_META: Record<
   TaskStatus,
-  { label: string; short: string; dot: string; pill: string; bar: string; soft: string; text: string }
+  { dot: string; pill: string; bar: string; soft: string; text: string }
 > = {
   pending: {
-    label: "To do",
-    short: "To do",
     dot: "bg-slate-400",
     pill: "bg-slate-100 text-slate-700",
     bar: "bg-slate-300",
@@ -16,8 +15,6 @@ export const STATUS_META: Record<
     text: "text-slate-700",
   },
   in_progress: {
-    label: "In progress",
-    short: "Doing",
     dot: "bg-amber-500",
     pill: "bg-amber-50 text-amber-800",
     bar: "bg-amber-400",
@@ -25,8 +22,6 @@ export const STATUS_META: Record<
     text: "text-amber-700",
   },
   completed: {
-    label: "Awaiting approval",
-    short: "Review",
     dot: "bg-emerald-300",
     pill: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
     bar: "bg-emerald-300",
@@ -34,8 +29,6 @@ export const STATUS_META: Record<
     text: "text-emerald-700",
   },
   approved: {
-    label: "Done",
-    short: "Done",
     dot: "bg-emerald-500",
     pill: "bg-emerald-50 text-emerald-800",
     bar: "bg-emerald-500",
@@ -44,11 +37,11 @@ export const STATUS_META: Record<
   },
 };
 
-export const PRIORITY_META: Record<TaskPriority, { label: string; dot: string; pill: string; edge: string; blink: boolean }> = {
-  urgent: { label: "Urgent", dot: "bg-red-500", pill: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200", edge: "bg-red-500", blink: true },
-  high: { label: "High", dot: "bg-orange-500", pill: "bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200", edge: "bg-orange-400", blink: false },
-  normal: { label: "Normal", dot: "bg-sky-500", pill: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-100", edge: "bg-sky-400", blink: false },
-  low: { label: "Low", dot: "bg-slate-300", pill: "bg-slate-100 text-slate-600", edge: "bg-slate-300", blink: false },
+export const PRIORITY_META: Record<TaskPriority, { dot: string; pill: string; edge: string; blink: boolean }> = {
+  urgent: { dot: "bg-red-500", pill: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200", edge: "bg-red-500", blink: true },
+  high: { dot: "bg-orange-500", pill: "bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200", edge: "bg-orange-400", blink: false },
+  normal: { dot: "bg-sky-500", pill: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-100", edge: "bg-sky-400", blink: false },
+  low: { dot: "bg-slate-300", pill: "bg-slate-100 text-slate-600", edge: "bg-slate-300", blink: false },
 };
 
 /** Which tab of the task list shows a given status. */
@@ -107,37 +100,40 @@ export function daysUntil(deadline: string): number {
   return Math.round((startOfDay(new Date(y, m - 1, d)) - startOfDay(new Date())) / 86_400_000);
 }
 
-export function dueInfo(task: Pick<Task, "deadline" | "status">): { label: string; tone: "red" | "amber" | "slate" } | null {
+export function dueInfo(
+  task: Pick<Task, "deadline" | "status">,
+  t: T
+): { label: string; tone: "red" | "amber" | "slate" } | null {
   if (!task.deadline) return null;
   const days = daysUntil(task.deadline);
   if (Number.isNaN(days)) return null;
-  if (!isOpen(task)) return { label: formatDate(task.deadline), tone: "slate" };
-  if (days < 0) return { label: `${-days}d late`, tone: "red" };
-  if (days === 0) return { label: "Today", tone: "amber" };
-  if (days === 1) return { label: "Tomorrow", tone: "amber" };
-  if (days <= 6) return { label: `${days} days`, tone: "slate" };
-  return { label: formatDate(task.deadline), tone: "slate" };
+  if (!isOpen(task)) return { label: formatDate(task.deadline, t), tone: "slate" };
+  if (days < 0) return { label: t("due.late", { n: -days }), tone: "red" };
+  if (days === 0) return { label: t("common.today"), tone: "amber" };
+  if (days === 1) return { label: t("common.tomorrow"), tone: "amber" };
+  if (days <= 6) return { label: t("due.inDays", { n: days }), tone: "slate" };
+  return { label: formatDate(task.deadline, t), tone: "slate" };
 }
 
-export function formatDate(value: string): string {
+export function formatDate(value: string, t: T): string {
   if (!value) return "";
   const [y, m, d] = value.split("-").map(Number);
   const date = y && m && d && value.length === 10 ? new Date(y, m - 1, d) : new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  return shortDate(date, t.locale);
 }
 
-export function timeAgo(iso: string): string {
+export function timeAgo(iso: string, t: T): string {
   const then = new Date(iso).getTime();
   if (Number.isNaN(then)) return "";
   const mins = Math.round((Date.now() - then) / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t("time.justNow");
+  if (mins < 60) return t("time.minutesAgo", { n: mins });
   const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return t("time.hoursAgo", { n: hrs });
   const days = Math.round(hrs / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  if (days < 7) return t("time.daysAgo", { n: days });
+  return shortDate(new Date(iso), t.locale);
 }
 
 export function firstName(name: string | undefined): string {

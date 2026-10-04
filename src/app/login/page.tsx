@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
+import { LanguageMenu } from "@/components/language-switcher";
+import { getT } from "@/lib/i18n/server";
 
 export default async function LoginPage({
   searchParams,
@@ -9,6 +11,7 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
+  const t = await getT();
 
   async function login(formData: FormData) {
     "use server";
@@ -30,53 +33,50 @@ export default async function LoginPage({
     <div className="flex min-h-screen">
       <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-brand-navy p-12 text-white lg:flex">
         <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-brand-gold/15 blur-3xl" />
-        <div className="relative flex items-center gap-4">
-          <span className="flex h-24 w-24 items-center justify-center rounded-3xl bg-white p-2 shadow-xl shadow-black/20">
+        <div className="relative">
+          <span className="flex w-44 items-center justify-center rounded-3xl bg-white p-3 shadow-xl shadow-black/20">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Chai Labs" className="h-full w-full object-contain" />
-          </span>
-          <span className="leading-tight">
-            <span className="block text-2xl font-semibold tracking-tight">Chai Labs</span>
-            <span className="block text-sm font-medium text-brand-gold">Real Estate</span>
+            <img src="/millennium-logo.png" alt="Millennium Group" className="h-auto w-full object-contain" />
           </span>
         </div>
         <div className="relative">
-          <h2 className="max-w-sm text-3xl font-semibold leading-snug">Run every site, from one screen.</h2>
+          <h2 className="max-w-sm text-3xl font-semibold leading-snug">{t("login.tagline")}</h2>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-slate-300">
-            Assign work, see photo proof, and chat with your team in one place.
+            {t("login.taglineSub")}
           </p>
         </div>
-        <p className="relative text-xs text-slate-400">© {new Date().getFullYear()} Chai Labs Real Estate</p>
+        <p className="relative text-xs text-slate-400">{t("login.copyright", { year: new Date().getFullYear() })}</p>
       </div>
 
-      <div className="flex flex-1 items-center justify-center bg-background px-4">
+      <div className="relative flex flex-1 items-center justify-center bg-background px-4">
+        <div className="absolute right-3 top-3">
+          <LanguageMenu />
+        </div>
         <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <div className="mb-6 flex flex-col items-center text-center lg:hidden">
+          <div className="mb-6 flex justify-center lg:hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Chai Labs" className="h-20 w-20 object-contain" />
-            <span className="mt-2 text-base font-semibold text-slate-900">Chai Labs</span>
-            <span className="text-xs font-medium text-brand-gold">Real Estate</span>
+            <img src="/millennium-logo.png" alt="Millennium Group" className="h-auto w-40 object-contain" />
           </div>
-          <h1 className="text-lg font-semibold text-slate-900">Welcome back</h1>
-          <p className="mt-1 text-sm text-slate-500">Sign in to continue</p>
+          <h1 className="text-lg font-semibold text-slate-900">{t("login.welcome")}</h1>
+          <p className="mt-1 text-sm text-slate-500">{t("login.signInContinue")}</p>
 
           <details className="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-            <summary className="cursor-pointer font-medium text-slate-700">Demo logins</summary>
+            <summary className="cursor-pointer font-medium text-slate-700">{t("login.demo")}</summary>
             <div className="mt-2 space-y-1">
-              <p><span className="font-medium">Owners:</span> Rahul@owner.com · Kedar@owner.com</p>
-              <p><span className="font-medium">Staff:</span> Vinayak@staff.com · ganesh@staff.com</p>
-              <p className="text-slate-500">Password: milleniumgroup</p>
+              <p><span className="font-medium">{t("login.owners")}</span> Rahul@owner.com · Kedar@owner.com</p>
+              <p><span className="font-medium">{t("login.staff")}</span> Vinayak@staff.com · ganesh@staff.com</p>
+              <p className="text-slate-500">{t("login.passwordIs", { password: "milleniumgroup" })}</p>
             </div>
           </details>
 
           <form action={login} className="mt-6 space-y-4">
             {error && (
               <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-inset ring-red-200">
-                Invalid email or password.
+                {t("login.invalid")}
               </p>
             )}
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700">{t("common.email")}</label>
               <input
                 name="email"
                 type="email"
@@ -86,7 +86,7 @@ export default async function LoginPage({
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700">{t("common.password")}</label>
               <input
                 name="password"
                 type="password"
@@ -95,7 +95,7 @@ export default async function LoginPage({
               />
             </div>
             <Button type="submit" className="w-full">
-              Sign in
+              {t("login.signIn")}
             </Button>
           </form>
         </div>

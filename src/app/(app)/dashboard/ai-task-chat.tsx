@@ -7,6 +7,7 @@ import { inputClass } from "@/components/ui/field";
 import { VoiceInputButton } from "@/components/voice-input-button";
 import { AssigneePicker } from "@/components/assignee-picker";
 import { UrgencyPicker } from "@/components/urgency-picker";
+import { useT } from "@/lib/i18n/client";
 import { parseTaskChatAction, type ChatParseState } from "@/app/(app)/dashboard/actions";
 import { createTaskAction } from "@/app/(app)/tasks/actions";
 import type { Site, Staff, TaskPriority } from "@/lib/data/types";
@@ -14,6 +15,7 @@ import type { Site, Staff, TaskPriority } from "@/lib/data/types";
 const initialState: ChatParseState = { status: "idle" };
 
 export function AiTaskChat({ sites, staff }: { sites: Site[]; staff: Staff[] }) {
+  const t = useT();
   const [state, formAction, parsing] = useActionState(parseTaskChatAction, initialState);
   const [dismissedFor, setDismissedFor] = useState<ChatParseState | null>(null);
   const [created, setCreated] = useState(false);
@@ -36,7 +38,7 @@ export function AiTaskChat({ sites, staff }: { sites: Site[]; staff: Staff[] }) 
           name="message"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type or speak a task"
+          placeholder={t("dash.typeOrSpeak")}
           className="h-10 min-w-0 flex-1 bg-transparent px-3 text-[15px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
           required
         />
@@ -48,13 +50,13 @@ export function AiTaskChat({ sites, staff }: { sites: Site[]; staff: Staff[] }) 
         />
         <Button type="submit" disabled={parsing || !message.trim()} className="shrink-0">
           {parsing ? <Loader2 size={16} className="animate-spin" /> : <CornerDownLeft size={16} />}
-          Enter
+          {t("dash.enter")}
         </Button>
       </form>
 
       {created && !showDraft && (
         <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-400/15 px-3 py-1 text-sm text-emerald-100">
-          <Check size={14} /> Task created
+          <Check size={14} /> {t("dash.taskCreated")}
         </p>
       )}
 
@@ -93,6 +95,7 @@ function DraftCard({
   onCancel: () => void;
   onCreated: () => void;
 }) {
+  const t = useT();
   const [siteId, setSiteId] = useState(draft.siteId ?? "");
   const [assignees, setAssignees] = useState<string[]>(draft.assigneeIds.filter((id) => staff.some((s) => s.id === id)));
   const [priority, setPriority] = useState<TaskPriority>(draft.priority);
@@ -110,7 +113,7 @@ function DraftCard({
             await createTaskAction(fd);
             onCreated();
           } catch (err) {
-            setError(err instanceof Error ? err.message : "Could not create the task.");
+            setError(err instanceof Error ? err.message : t("dash.createFailed"));
           }
         });
       }}
@@ -122,9 +125,9 @@ function DraftCard({
 
       <div className="flex items-center justify-between">
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-gold">
-          <Sparkles size={13} /> Check and create
+          <Sparkles size={13} /> {t("dash.checkCreate")}
         </span>
-        <button type="button" onClick={onCancel} aria-label="Close" className="rounded-lg p-1 text-slate-400 hover:bg-slate-100">
+        <button type="button" onClick={onCancel} aria-label={t("common.close")} className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100">
           <X size={16} />
         </button>
       </div>
@@ -159,12 +162,12 @@ function DraftCard({
           name="deadline"
           type="date"
           defaultValue={draft.deadline ?? ""}
-          aria-label="Due date"
+          aria-label={t("dash.dueDate")}
           className="h-9 rounded-xl border border-slate-200 px-2.5 text-sm text-slate-700 focus:border-brand-navy focus:outline-none"
         />
         <Button type="submit" disabled={!ready || pending} className="ml-auto">
           {pending ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-          Create
+          {t("dash.create")}
         </Button>
       </div>
 

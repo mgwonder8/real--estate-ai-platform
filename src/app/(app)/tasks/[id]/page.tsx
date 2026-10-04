@@ -18,6 +18,7 @@ import { TaskFiles, type RefFile } from "@/components/task-files";
 import { isProbablyImageUrl } from "@/lib/files";
 import { STATUS_META, STATUS_ORDER, formatDate, serialLabel, timeAgo } from "@/lib/task-meta";
 import { assignerName } from "@/lib/roles";
+import { getT } from "@/lib/i18n/server";
 import { updateTaskStatusAction } from "@/app/(app)/tasks/actions";
 import { TaskReviewForm } from "@/app/(app)/tasks/task-review-form";
 import { CommentBox } from "@/app/(app)/tasks/comment-thread";
@@ -31,6 +32,7 @@ type TimelineItem =
 
 export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const t = await getT();
   const session = await auth();
   const [task, sites, staff, proofs, comments, updates, references] = await Promise.all([
     getTask(id),
@@ -45,11 +47,11 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
   const staffById = Object.fromEntries(staff.map((s) => [s.id, s]));
   const site = sites.find((s) => s.id === task.siteId);
-  const nameOf = (sid: string) => staffById[sid]?.name ?? "Someone";
+  const nameOf = (sid: string) => staffById[sid]?.name ?? t("common.someone");
 
   const refFiles: RefFile[] = [
     ...(task.resourceFileUrl
-      ? [{ url: task.resourceFileUrl, name: task.resourceFileName || "Reference file", type: "", by: nameOf(task.createdBy), at: task.createdAt }]
+      ? [{ url: task.resourceFileUrl, name: task.resourceFileName || t("tf.refFile"), type: "", by: nameOf(task.createdBy), at: task.createdAt }]
       : []),
     ...references.map((r) => ({ url: r.url, name: r.name, type: r.type, by: nameOf(r.uploadedBy), at: r.createdAt, viaChat: r.source === "chat" })),
   ];
@@ -93,7 +95,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
             <PriorityPill priority={task.priority} still={task.status === "completed" || task.status === "approved"} />
             <DueBadge task={task} />
             <span className="text-xs text-slate-500">
-              Assigned by <b className="font-semibold text-slate-700">{assignerName(staffById[task.createdBy])}</b>
+              {t("td.assignedBy")} <b className="font-semibold text-slate-700">{assignerName(staffById[task.createdBy], t)}</b>
             </span>
           </span>
         }
@@ -121,7 +123,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                         {done ? <Check size={15} strokeWidth={3} /> : i + 1}
                       </span>
                       <span className={`whitespace-nowrap text-[11px] font-medium ${current || done ? "text-slate-800" : "text-slate-400"}`}>
-                        {STATUS_META[s].short}
+                        {t(`statusShort.${s}` as const)}
                       </span>
                     </div>
                     {i < STATUS_ORDER.length - 1 && (
@@ -137,10 +139,10 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 <input type="hidden" name="taskId" value={task.id} />
                 <input type="hidden" name="toStatus" value={task.status === "pending" ? "in_progress" : "completed"} />
                 <p className="text-sm text-slate-600">
-                  {task.status === "pending" ? "Not started yet." : "Work is underway."}
+                  {task.status === "pending" ? t("td.notStarted") : t("td.underway")}
                 </p>
                 <Button type="submit" variant="secondary">
-                  {task.status === "pending" ? <><Play size={15} /> Mark started</> : <><Check size={15} /> Mark done</>}
+                  {task.status === "pending" ? <><Play size={15} /> {t("td.markStarted")}</> : <><Check size={15} /> {t("td.markDone")}</>}
                 </Button>
               </form>
             )}
@@ -153,20 +155,20 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
             {task.status === "approved" && (
               <p className="mt-5 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800">
-                <Check size={16} /> Approved{task.approvedBy && ` by ${nameOf(task.approvedBy)}`}
-                {task.approvedAt && <span className="text-emerald-600">· {timeAgo(task.approvedAt)}</span>}
+                <Check size={16} /> {task.approvedBy ? t("td.approvedBy", { name: nameOf(task.approvedBy) }) : t("td.approved")}
+                {task.approvedAt && <span className="text-emerald-600">· {timeAgo(task.approvedAt, t)}</span>}
               </p>
             )}
           </Card>
 
           {(task.brief || task.resourceLink || task.resourceFileUrl) && (
             <Card className="p-5">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Remark</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">{t("td.remark")}</p>
               {task.brief && <p className="whitespace-pre-line text-[15px] leading-relaxed text-slate-700">{task.brief}</p>}
               {task.resourceLink && (
                 <div className="mt-3">
                   <a href={task.resourceLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-brand-navy ring-1 ring-slate-200 hover:bg-slate-100">
-                    <Link2 size={14} /> Open link
+                    <Link2 size={14} /> {t("td.openLink")}
                   </a>
                 </div>
               )}
@@ -175,7 +177,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
 
           {(refFiles.length > 0 || proofs.length > 0) && (
             <Card className="p-5">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Files &amp; photos</p>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">{t("td.filesPhotos")}</p>
               <TaskFiles
                 references={refFiles}
                 proofs={proofs.map((p) => ({
@@ -187,36 +189,36 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                   lat: p.gpsLat,
                   lng: p.gpsLng,
                 }))}
-                referenceTitle="Reference from the office"
-                proofTitle="Proof from site"
+                referenceTitle={t("td.refFromOffice")}
+                proofTitle={t("td.proofFromSite")}
               />
             </Card>
           )}
 
           <Card className="p-5">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">Activity</p>
+            <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-slate-400">{t("td.activity")}</p>
             <ol className="space-y-4">
               <TimelineRow icon={<Avatar name={nameOf(task.createdBy)} size="xs" />} at={task.createdAt}>
-                <b className="font-medium text-slate-900">{nameOf(task.createdBy)}</b> created this task
+                <b className="font-medium text-slate-900">{nameOf(task.createdBy)}</b> {t("td.created")}
               </TimelineRow>
               {timeline.map((item, i) => {
                 if (item.kind === "status") {
                   return (
                     <TimelineRow key={i} icon={<span className={`h-2.5 w-2.5 rounded-full ${STATUS_META[item.to]?.dot ?? "bg-slate-300"}`} />} at={item.at}>
-                      <b className="font-medium text-slate-900">{nameOf(item.who)}</b> moved it to{" "}
-                      <span className={`font-medium ${STATUS_META[item.to]?.text ?? ""}`}>{STATUS_META[item.to]?.label ?? item.to}</span>
+                      <b className="font-medium text-slate-900">{nameOf(item.who)}</b> {t("td.movedTo")}{" "}
+                      <span className={`font-medium ${STATUS_META[item.to]?.text ?? ""}`}>{item.to in STATUS_META ? t(`status.${item.to}` as const) : item.to}</span>
                     </TimelineRow>
                   );
                 }
                 if (item.kind === "proof") {
                   return (
                     <TimelineRow key={i} icon={<Camera size={13} className="text-emerald-600" />} at={item.at}>
-                      <b className="font-medium text-slate-900">{nameOf(item.who)}</b> sent proof
+                      <b className="font-medium text-slate-900">{nameOf(item.who)}</b> {t("td.sentProof")}
                       <div className="mt-2 flex gap-3 rounded-xl bg-slate-50 p-2.5">
                         {item.photo && (
                           <a href={item.photo} target="_blank" rel="noopener noreferrer" className="shrink-0">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={item.photo} alt="Proof" className="h-20 w-20 rounded-lg object-cover ring-1 ring-slate-200" />
+                            <img src={item.photo} alt={t("td.proofAlt")} className="h-20 w-20 rounded-lg object-cover ring-1 ring-slate-200" />
                           </a>
                         )}
                         <div className="min-w-0 text-sm">
@@ -228,7 +230,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                               rel="noopener noreferrer"
                               className="mt-1 inline-flex items-center gap-1 text-xs text-brand-navy hover:underline"
                             >
-                              <MapPin size={12} /> Location
+                              <MapPin size={12} /> {t("common.location")}
                             </a>
                           )}
                         </div>
@@ -239,7 +241,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 if (item.kind === "file") {
                   return (
                     <TimelineRow key={i} icon={<Paperclip size={12} className="text-brand-gold" />} at={item.at}>
-                      <b className="font-medium text-slate-900">{nameOf(item.who)}</b> added a reference file
+                      <b className="font-medium text-slate-900">{nameOf(item.who)}</b> {t("td.addedRef")}
                       <span className="ml-1 text-slate-500">{item.text}</span>
                     </TimelineRow>
                   );
@@ -247,7 +249,7 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 const mine = item.who === session!.user.id;
                 return (
                   <TimelineRow key={i} icon={<Avatar name={nameOf(item.who)} size="xs" />} at={item.at}>
-                    <b className="font-medium text-slate-900">{mine ? "You" : nameOf(item.who)}</b>
+                    <b className="font-medium text-slate-900">{mine ? t("common.you") : nameOf(item.who)}</b>
                     <p className={`mt-1.5 inline-block rounded-2xl rounded-tl-sm px-3.5 py-2 text-sm ${mine ? "bg-brand-navy text-white" : "bg-slate-100 text-slate-800"}`}>
                       {item.text}
                     </p>
@@ -269,13 +271,13 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                   <Building2 size={18} />
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-xs text-slate-400">Site</span>
+                  <span className="block text-xs text-slate-400">{t("td.site")}</span>
                   <span className="block break-words text-sm font-semibold text-slate-900">{site.name}</span>
                 </span>
               </Link>
             )}
             <div className="p-4">
-              <p className="mb-2.5 text-xs text-slate-400">Assigned to</p>
+              <p className="mb-2.5 text-xs text-slate-400">{t("td.assignedTo")}</p>
               <div className="space-y-2.5">
                 {task.assigneeIds.map((aid) => (
                   <Link key={aid} href={`/tasks?staff=${aid}`} className="flex min-h-11 items-center gap-2.5 rounded-lg hover:opacity-80">
@@ -288,9 +290,9 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
                 ))}
               </div>
             </div>
-            <InfoRow icon={<CalendarDays size={15} />} label="Due" value={task.deadline ? formatDate(task.deadline) : "No date"} />
-            <InfoRow icon={<UserRound size={15} />} label="Assigned by" value={assignerName(staffById[task.createdBy])} />
-            <InfoRow icon={<Camera size={15} />} label="Photo proof" value={task.proofRequired ? "Required" : "Optional"} />
+            <InfoRow icon={<CalendarDays size={15} />} label={t("td.due")} value={task.deadline ? formatDate(task.deadline, t) : t("td.noDate")} />
+            <InfoRow icon={<UserRound size={15} />} label={t("td.assignedBy")} value={assignerName(staffById[task.createdBy], t)} />
+            <InfoRow icon={<Camera size={15} />} label={t("td.photoProof")} value={task.proofRequired ? t("td.required") : t("td.optional")} />
           </Card>
         </div>
       </div>
@@ -298,14 +300,15 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ id:
   );
 }
 
-function TimelineRow({ icon, at, children }: { icon: React.ReactNode; at: string; children: React.ReactNode }) {
+async function TimelineRow({ icon, at, children }: { icon: React.ReactNode; at: string; children: React.ReactNode }) {
+  const t = await getT();
   return (
     <li className="flex gap-3">
       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-50 ring-1 ring-slate-100">{icon}</span>
       <div className="min-w-0 flex-1 text-sm text-slate-600">
         <div className="flex items-baseline justify-between gap-2">
           <div className="min-w-0">{children}</div>
-          <span className="shrink-0 text-xs text-slate-400">{timeAgo(at)}</span>
+          <span className="shrink-0 text-xs text-slate-400">{timeAgo(at, t)}</span>
         </div>
       </div>
     </li>

@@ -9,6 +9,7 @@ import { saveProofFile } from "@/lib/storage/upload";
 import { listOfficeAndOwnerStaffIds } from "@/lib/data/staff";
 import { notifyManyStaff } from "@/lib/push/send";
 import { nextCheckStatus } from "@/lib/task-meta";
+import { getT } from "@/lib/i18n/server";
 import type { Role, TaskPriority, TaskStatus } from "@/lib/data/types";
 
 function revalidateTaskPaths() {
@@ -20,8 +21,9 @@ function revalidateTaskPaths() {
 }
 
 export async function createTaskAction(formData: FormData) {
+  const t = await getT();
   const session = await auth();
-  if (!session?.user) throw new Error("Not authenticated");
+  if (!session?.user) throw new Error(t("common.notAuthenticated"));
 
   let resourceFileUrl = "";
   let resourceFileName = "";
@@ -35,7 +37,7 @@ export async function createTaskAction(formData: FormData) {
 
   const title = String(formData.get("title") ?? "");
   const assigneeIds = formData.getAll("assigneeIds").map(String).filter(Boolean);
-  if (assigneeIds.length === 0) throw new Error("Select at least one staff member to assign this task to");
+  if (assigneeIds.length === 0) throw new Error(t("nt.needAssignee"));
 
   await createTask({
     title,
@@ -65,19 +67,20 @@ export async function createTaskAction(formData: FormData) {
  * the owner and office tick a task straight to done, or untick to reopen it.
  */
 export async function toggleTaskDoneAction(taskId: string): Promise<void> {
+  const t = await getT();
   const session = await auth();
-  if (!session?.user) throw new Error("Not authenticated");
+  if (!session?.user) throw new Error(t("common.notAuthenticated"));
   const me = session.user.id;
   const role = session.user.role as Role;
 
   const task = await getTask(taskId);
-  if (!task) throw new Error("Task not found");
+  if (!task) throw new Error(t("ss.taskNotFound"));
   if (role === "site_staff" && !task.assigneeIds.includes(me)) {
-    throw new Error("You can only tick off your own tasks");
+    throw new Error(t("ss.youCanOnly"));
   }
 
   const next = nextCheckStatus(task.status, role);
-  if (!next) throw new Error("This task is already approved");
+  if (!next) throw new Error(t("ss.alreadyApproved"));
 
   if (next === "approved") {
     await approveTask({ taskId, approvedBy: me, approverRole: role });
@@ -151,7 +154,7 @@ export async function requestTaskChangesAction(formData: FormData) {
   if (!session?.user) throw new Error("Not authenticated");
 
   const comment = String(formData.get("comment") ?? "").trim();
-  if (!comment) throw new Error("A comment is required when requesting changes");
+  if (!comment) throw new Error((await getT())("rv.needComment"));
 
   const taskId = String(formData.get("taskId") ?? "");
 

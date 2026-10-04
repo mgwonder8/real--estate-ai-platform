@@ -15,6 +15,7 @@ import { listQueriesRaisedBy } from "@/lib/data/queries";
 import { checkStateOf, firstName, isFinished, isOpen, nextCheckStatus, serialLabel, sortByUrgency, timeAgo } from "@/lib/task-meta";
 import { assignerName } from "@/lib/roles";
 import { greetingIST, greetingName } from "@/lib/greeting";
+import { getT } from "@/lib/i18n/server";
 import { toggleTaskDoneAction } from "@/app/(app)/tasks/actions";
 import { addOwnTaskCommentAction } from "@/app/(app)/site/actions";
 import { ProofForm } from "@/app/(app)/site/proof-form";
@@ -25,6 +26,7 @@ import type { Task } from "@/lib/data/types";
 const byRecent = (a: Task, b: Task) => b.updatedAt.localeCompare(a.updatedAt);
 
 export default async function SiteStaffPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  const tr = await getT();
   const session = await auth();
   const me = session!.user.id;
   const { view } = await searchParams;
@@ -42,8 +44,8 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
 
   const staffById = Object.fromEntries(staff.map((s) => [s.id, s]));
   const siteById = Object.fromEntries(sites.map((s) => [s.id, s]));
-  const nameOf = (id: string) => (id === me ? "You" : staffById[id]?.name ?? "Office");
-  const byLabel = (id: string) => (id === me ? "You" : assignerName(staffById[id]));
+  const nameOf = (id: string) => (id === me ? tr("common.you") : staffById[id]?.name ?? tr("tasks.assigner.office"));
+  const byLabel = (id: string) => (id === me ? tr("common.you") : assignerName(staffById[id], tr));
 
   const mySiteIds = meStaff ? allSiteIds(meStaff) : [session!.user.siteId].filter(Boolean);
   const teamSiteIds = meStaff ? teamViewSites(meStaff) : [];
@@ -63,7 +65,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
     const taskComments = comments.filter((c) => c.taskId === t.id);
     const references = [
       ...(t.resourceFileUrl
-        ? [{ url: t.resourceFileUrl, name: t.resourceFileName || "Reference file", type: "", by: nameOf(t.createdBy), at: t.createdAt }]
+        ? [{ url: t.resourceFileUrl, name: t.resourceFileName || tr("tf.refFile"), type: "", by: nameOf(t.createdBy), at: t.createdAt }]
         : []),
       ...allRefs
         .filter((r) => r.taskId === t.id)
@@ -84,7 +86,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
         due={t}
         siteName={own ? (multiSite ? siteById[t.siteId]?.name : undefined) : undefined}
         byName={byLabel(t.createdBy)}
-        toNames={own ? (others.length ? ["You", ...others.map((id) => firstName(staffById[id]?.name))] : undefined) : t.assigneeIds.map((id) => staffById[id]?.name ?? "?")}
+        toNames={own ? (others.length ? [tr("common.you"), ...others.map((id) => firstName(staffById[id]?.name))] : undefined) : t.assigneeIds.map((id) => staffById[id]?.name ?? "?")}
         extra={
           taskComments.length > 0 ? (
             <span className="inline-flex items-center gap-1 text-slate-400">
@@ -98,7 +100,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
             state={state}
             next={next ? checkStateOf(next) : null}
             action={toggleTaskDoneAction}
-            label={state === "none" ? `Mark ${t.title} as done` : `Undo done for ${t.title}`}
+            label={state === "none" ? tr("tasks.markDone", { title: t.title }) : tr("tasks.undoDone", { title: t.title })}
           />
         }
       >
@@ -108,7 +110,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
           {!own && (
             <p className="flex items-start gap-2 rounded-xl bg-white px-3 py-2.5 text-xs text-slate-500 ring-1 ring-slate-200">
               <Eye size={14} className="mt-px shrink-0 text-slate-400" />
-              You can see this task. Only {t.assigneeIds.map((id) => firstName(staffById[id]?.name)).join(" or ")} can tick it off.
+              {tr("ss.viewOnly", { names: t.assigneeIds.map((id) => firstName(staffById[id]?.name)).join(` ${tr("ss.or")} `) })}
             </p>
           )}
 
@@ -119,7 +121,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-sm text-brand-navy ring-1 ring-slate-200"
             >
-              <Link2 size={14} /> Open link
+              <Link2 size={14} /> {tr("td.openLink")}
             </a>
           )}
 
@@ -127,8 +129,8 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
             compact
             references={references}
             proofs={proofs}
-            referenceTitle="From the office"
-            proofTitle={own ? "Your proof" : "Proof from site"}
+            referenceTitle={tr("ss.fromOffice")}
+            proofTitle={own ? tr("ss.yourProof") : tr("td.proofFromSite")}
           />
 
           {own && isOpen(t) && <ProofForm taskId={t.id} required={t.proofRequired} />}
@@ -136,7 +138,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
           {own && (
             <div className="border-t border-slate-200/70 pt-3">
               <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                <MessageSquare size={13} /> Messages with the office
+                <MessageSquare size={13} /> {tr("ss.msgsOffice")}
               </p>
               <div className="space-y-2">
                 {taskComments.map((c) => {
@@ -149,12 +151,12 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
                         }`}
                       >
                         {c.message}
-                        <span className={`mt-0.5 block text-[10px] ${mineMsg ? "text-slate-300" : "text-slate-400"}`}>{timeAgo(c.createdAt)}</span>
+                        <span className={`mt-0.5 block text-[10px] ${mineMsg ? "text-slate-300" : "text-slate-400"}`}>{timeAgo(c.createdAt, tr)}</span>
                       </p>
                     </div>
                   );
                 })}
-                <CommentBox taskId={t.id} action={addOwnTaskCommentAction} placeholder="Message the office" />
+                <CommentBox taskId={t.id} action={addOwnTaskCommentAction} placeholder={tr("ss.msgOffice")} />
               </div>
             </div>
           )}
@@ -167,7 +169,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
     <div className="mx-auto max-w-3xl">
       <div className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          {greetingIST()}, {greetingName(session!.user.name)}
+          {greetingIST(tr)}, {greetingName(session!.user.name)}
         </h1>
         {mySiteIds.length > 0 && (
           <p className="mt-0.5 text-sm text-slate-500">{mySiteIds.map((id) => siteById[id]?.name).filter(Boolean).join(" · ")}</p>
@@ -182,7 +184,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
               !showTeam ? "bg-brand-navy text-white shadow-sm" : "text-slate-500 hover:bg-slate-50"
             }`}
           >
-            My tasks
+            {tr("nav.myTasks")}
             <span className={`rounded-md px-1.5 text-xs ${!showTeam ? "bg-white/15" : "bg-slate-100"}`}>{openMine.length}</span>
           </Link>
           <Link
@@ -191,7 +193,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
               showTeam ? "bg-brand-navy text-white shadow-sm" : "text-slate-500 hover:bg-slate-50"
             }`}
           >
-            <UsersRound size={15} /> Team
+            <UsersRound size={15} /> {tr("nav.team")}
             <span className={`rounded-md px-1.5 text-xs ${showTeam ? "bg-white/15" : "bg-slate-100"}`}>{team.filter(isOpen).length}</span>
           </Link>
         </div>
@@ -200,10 +202,10 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
       {!showTeam ? (
         <div className="space-y-6">
           <section>
-            <SectionTitle label="To do" count={openMine.length} />
+            <SectionTitle label={tr("ss.todo")} count={openMine.length} />
             <Card className="overflow-hidden">
               {openMine.length === 0 ? (
-                <EmptyState icon={<CheckCircle2 size={20} className="text-emerald-500" />} title="All caught up" />
+                <EmptyState icon={<CheckCircle2 size={20} className="text-emerald-500" />} title={tr("ss.caughtUp")} />
               ) : (
                 <div className="divide-y divide-slate-100">{openMine.map((t) => renderTask(t, true))}</div>
               )}
@@ -212,7 +214,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
 
           {doneMine.length > 0 && (
             <section>
-              <SectionTitle label="Finished" count={doneMine.length} tone="text-emerald-600" />
+              <SectionTitle label={tr("ss.finished")} count={doneMine.length} tone="text-emerald-600" />
               <Card className="overflow-hidden">
                 <div className="divide-y divide-emerald-100">{doneMine.map((t) => renderTask(t, true))}</div>
               </Card>
@@ -226,10 +228,10 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
             const ordered = [...sortByUrgency(siteTasks.filter(isOpen)), ...siteTasks.filter(isFinished).sort(byRecent)];
             return (
               <section key={siteId}>
-                <SectionTitle label={siteById[siteId]?.name ?? "Site"} count={siteTasks.filter(isOpen).length} suffix="open" />
+                <SectionTitle label={siteById[siteId]?.name ?? tr("td.site")} count={siteTasks.filter(isOpen).length} suffix={tr("dash.openLabel")} />
                 <Card className="overflow-hidden">
                   {ordered.length === 0 ? (
-                    <EmptyState icon={<UsersRound size={20} />} title="No other tasks on this site" />
+                    <EmptyState icon={<UsersRound size={20} />} title={tr("ss.noOther")} />
                   ) : (
                     <div className="divide-y divide-slate-100">{ordered.map((t) => renderTask(t, false))}</div>
                   )}
@@ -241,7 +243,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
       )}
 
       <Card className="mt-8 p-4 sm:p-5">
-        <p className="mb-3 text-sm font-semibold text-slate-900">Need help? Ask the office</p>
+        <p className="mb-3 text-sm font-semibold text-slate-900">{tr("ss.needHelp")}</p>
         <RaiseQueryForm />
         {queries.length > 0 && (
           <div className="mt-4 space-y-2 border-t border-slate-100 pt-4">
@@ -254,7 +256,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
                       q.status === "answered" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
                     }`}
                   >
-                    {q.status === "answered" ? "Replied" : "Sent"}
+                    {q.status === "answered" ? tr("ss.replied") : tr("ss.sent")}
                   </span>
                 </div>
                 {q.reply && <p className="mt-1.5 rounded-xl bg-emerald-50/60 px-3 py-2 text-slate-700">{q.reply}</p>}
@@ -270,7 +272,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
         .map((site) => (
           <Card key={site.id} className="mt-4 p-4 sm:p-5">
             <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-900">
-              <FileText size={15} /> {multiSite ? `${site.name} brief` : "Project brief"}
+              <FileText size={15} /> {multiSite ? tr("ss.briefOf", { site: site.name }) : tr("ss.brief")}
             </p>
             {site.briefText && <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600">{site.briefText}</p>}
             {site.briefFileUrl && (
@@ -280,7 +282,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
                 rel="noopener noreferrer"
                 className="mt-2 inline-flex items-center gap-1.5 text-sm text-brand-navy hover:underline"
               >
-                <Paperclip size={14} /> {site.briefFileName || "Document"}
+                <Paperclip size={14} /> {site.briefFileName || tr("ss.document")}
               </a>
             )}
           </Card>

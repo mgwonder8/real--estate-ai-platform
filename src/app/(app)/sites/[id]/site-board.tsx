@@ -6,9 +6,11 @@ import { Avatar, AvatarStack } from "@/components/ui/avatar";
 import { DueBadge, PriorityDot } from "@/components/ui/status-pill";
 import { STATUS_META, STATUS_ORDER, firstName, serialLabel, sortByUrgency } from "@/lib/task-meta";
 import { assignerName } from "@/lib/roles";
+import { useT } from "@/lib/i18n/client";
 import type { Staff, Task } from "@/lib/data/types";
 
 export function SiteBoard({ tasks, people, staffById }: { tasks: Task[]; people: Staff[]; staffById: Record<string, Staff> }) {
+  const tr = useT();
   const [person, setPerson] = useState("all");
 
   const visible = useMemo(
@@ -26,7 +28,7 @@ export function SiteBoard({ tasks, people, staffById }: { tasks: Task[]; people:
               person === "all" ? "bg-brand-navy text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
             }`}
           >
-            Everyone
+            {tr("sb.everyone")}
           </button>
           {people.map((p) => {
             const on = person === p.id;
@@ -55,12 +57,12 @@ export function SiteBoard({ tasks, people, staffById }: { tasks: Task[]; people:
               <div className="mb-2 flex items-center justify-between px-1.5 pt-0.5">
                 <span className={`flex items-center gap-2 text-sm font-semibold ${m.text}`}>
                   <span className={`h-2 w-2 rounded-full ${m.dot}`} />
-                  {m.label}
+                  {tr(`status.${status}` as const)}
                 </span>
                 <span className="rounded-md bg-white/70 px-1.5 text-xs font-medium text-slate-500">{col.length}</span>
               </div>
               <div className="space-y-2">
-                {col.length === 0 && <p className="px-1.5 py-3 text-center text-xs text-slate-400">Empty</p>}
+                {col.length === 0 && <p className="px-1.5 py-3 text-center text-xs text-slate-400">{tr("sb.empty")}</p>}
                 {col.map((t) => (
                   <Link
                     key={t.id}
@@ -74,7 +76,7 @@ export function SiteBoard({ tasks, people, staffById }: { tasks: Task[]; people:
                         <PriorityDot priority={t.priority} />
                       </span>
                     </div>
-                    <p className="mt-1.5 text-[11px] text-slate-400">By {assignerName(staffById[t.createdBy])}</p>
+                    <p className="mt-1.5 text-[11px] text-slate-400">{tr("sb.by", { name: assignerName(staffById[t.createdBy], tr) })}</p>
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <AvatarStack names={t.assigneeIds.map((id) => staffById[id]?.name ?? "?")} />
                       <DueBadge task={t} />

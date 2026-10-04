@@ -14,7 +14,7 @@
   --color-brand-navy: var(--brand-navy);
   --color-brand-navy-soft: var(--brand-navy-soft);
   --color-brand-gold: var(--brand-gold);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist-sans), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
@@ -81,6 +81,20 @@ body {
 }
 
 html, body { overflow-wrap: break-word; }
+
+/* Devanagari: letter-spacing pulls joined letters apart, and tight line heights clip the marks above and below. */
+html[lang="hi"] *,
+html[lang="mr"] * {
+  letter-spacing: normal !important;
+}
+html[lang="hi"] .leading-tight,
+html[lang="mr"] .leading-tight { line-height: 1.45; }
+html[lang="hi"] .leading-snug,
+html[lang="mr"] .leading-snug { line-height: 1.55; }
+html[lang="hi"] .leading-none,
+html[lang="mr"] .leading-none { line-height: 1.3; }
+html[lang="hi"] body,
+html[lang="mr"] body { line-height: 1.6; }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }

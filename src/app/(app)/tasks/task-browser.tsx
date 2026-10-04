@@ -9,18 +9,20 @@ import { TaskCheck } from "@/components/task-check";
 import { toggleTaskDoneAction } from "@/app/(app)/tasks/actions";
 import { checkStateOf, isOpen, isOverdue, nextCheckStatus, serialLabel, sortByUrgency, firstName } from "@/lib/task-meta";
 import { assignerName } from "@/lib/roles";
+import { useT } from "@/lib/i18n/client";
+import type { MessageKey } from "@/lib/i18n/messages";
 import type { Site, Staff, Task } from "@/lib/data/types";
 
 type View = "all" | "open" | "review" | "done" | "late";
 
 export type TaskFilters = { status: View; site: string; staff: string; by: string; q: string };
 
-const VIEWS: { key: View; label: string; dot?: string }[] = [
-  { key: "all", label: "All" },
-  { key: "open", label: "Open", dot: "bg-sky-500" },
-  { key: "review", label: "Awaiting approval", dot: "bg-emerald-300" },
-  { key: "done", label: "Done", dot: "bg-emerald-500" },
-  { key: "late", label: "Late", dot: "bg-red-500" },
+const VIEWS: { key: View; label: MessageKey; dot?: string }[] = [
+  { key: "all", label: "views.all" },
+  { key: "open", label: "views.open", dot: "bg-sky-500" },
+  { key: "review", label: "views.review", dot: "bg-emerald-300" },
+  { key: "done", label: "views.done", dot: "bg-emerald-500" },
+  { key: "late", label: "views.late", dot: "bg-red-500" },
 ];
 
 function inView(t: Task, view: View): boolean {
@@ -56,6 +58,7 @@ export function TaskBrowser({
   proofCounts: Record<string, number>;
   initial: TaskFilters;
 }) {
+  const t = useT();
   const [view, setView] = useState<View>(initial.status);
   const [site, setSite] = useState(initial.site);
   const [person, setPerson] = useState(initial.staff);
@@ -70,8 +73,8 @@ export function TaskBrowser({
   );
   const assigners = useMemo(() => {
     const ids = Array.from(new Set(tasks.map((t) => t.createdBy)));
-    return ids.map((id) => ({ id, name: assignerName(staffById[id]) })).sort((a, b) => a.name.localeCompare(b.name));
-  }, [tasks, staffById]);
+    return ids.map((id) => ({ id, name: assignerName(staffById[id], t) })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [tasks, staffById, t]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -86,18 +89,18 @@ export function TaskBrowser({
 
   const scoped = useMemo(() => {
     const term = q.trim().toLowerCase().replace(/^#/, "");
-    return tasks.filter((t) => {
-      if (site !== "all" && t.siteId !== site) return false;
-      if (person !== "all" && !t.assigneeIds.includes(person)) return false;
-      if (by !== "all" && t.createdBy !== by) return false;
+    return tasks.filter((task) => {
+      if (site !== "all" && task.siteId !== site) return false;
+      if (person !== "all" && !task.assigneeIds.includes(person)) return false;
+      if (by !== "all" && task.createdBy !== by) return false;
       if (!term) return true;
-      if (String(t.serial) === term) return true;
-      const hay = [t.title, t.brief, siteById[t.siteId]?.name, assignerName(staffById[t.createdBy]), ...t.assigneeIds.map((id) => staffById[id]?.name)]
+      if (String(task.serial) === term) return true;
+      const hay = [task.title, task.brief, siteById[task.siteId]?.name, assignerName(staffById[task.createdBy], t), ...task.assigneeIds.map((id) => staffById[id]?.name)]
         .join(" ")
         .toLowerCase();
       return hay.includes(term);
     });
-  }, [tasks, site, person, by, q, siteById, staffById]);
+  }, [tasks, site, person, by, q, siteById, staffById, t]);
 
   const counts = useMemo(
     () => Object.fromEntries(VIEWS.map((v) => [v.key, scoped.filter((t) => inView(t, v.key)).length])) as Record<View, number>,
@@ -122,7 +125,7 @@ export function TaskBrowser({
               }`}
             >
               {tab.dot && <span className={`h-2 w-2 rounded-full ${tab.dot}`} />}
-              {tab.label}
+              {t(tab.label)}
               <span className={`rounded-md px-1.5 text-xs ${on ? "bg-white/15" : "bg-slate-100 text-slate-500"}`}>{counts[tab.key]}</span>
             </button>
           );
@@ -136,13 +139,13 @@ export function TaskBrowser({
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search by name or #number"
+              placeholder={t("tasks.search")}
               className="h-11 w-full rounded-xl bg-slate-50 pl-9 pr-3 text-sm placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-navy/15 sm:h-10"
             />
           </div>
 
           <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
-            <Chip on={site === "all"} onClick={() => setSite("all")}>All sites</Chip>
+            <Chip on={site === "all"} onClick={() => setSite("all")}>{t("tasks.allSites")}</Chip>
             {sites.map((s) => (
               <Chip key={s.id} on={site === s.id} onClick={() => setSite(site === s.id ? "all" : s.id)}>
                 {s.name}
@@ -152,13 +155,13 @@ export function TaskBrowser({
 
           <label className="flex h-11 shrink-0 items-center gap-2 rounded-xl bg-slate-50 px-3 text-sm text-slate-600 focus-within:ring-2 focus-within:ring-brand-navy/15 sm:h-10">
             <UserRound size={15} className="text-slate-400" />
-            <span className="whitespace-nowrap text-xs font-medium text-slate-500">Assigned by</span>
+            <span className="whitespace-nowrap text-xs font-medium text-slate-500">{t("tasks.assignedBy")}</span>
             <select
               value={by}
               onChange={(e) => setBy(e.target.value)}
               className="min-w-0 bg-transparent text-sm font-medium text-slate-800 focus:outline-none"
             >
-              <option value="all">Anyone</option>
+              <option value="all">{t("tasks.anyone")}</option>
               {assigners.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
@@ -178,14 +181,14 @@ export function TaskBrowser({
               }}
               className="flex min-h-10 shrink-0 items-center gap-1 self-start rounded-lg px-3 py-1.5 text-[13px] font-medium text-slate-500 hover:bg-slate-100 lg:ml-auto lg:min-h-0 lg:self-auto lg:px-2 lg:text-xs"
             >
-              <X size={13} /> Clear
+              <X size={13} /> {t("tasks.clear")}
             </button>
           )}
         </div>
 
         {people.length > 0 && (
           <div className="no-scrollbar mt-3 flex items-center gap-1.5 overflow-x-auto border-t border-slate-100 pt-3">
-            <span className="mr-1 shrink-0 text-xs font-medium text-slate-400">Assigned to</span>
+            <span className="mr-1 shrink-0 text-xs font-medium text-slate-400">{t("tasks.assignedTo")}</span>
             {people.map((p) => {
               const on = person === p.id;
               return (
@@ -208,36 +211,36 @@ export function TaskBrowser({
 
       <Card className="overflow-hidden">
         {visible.length === 0 ? (
-          <EmptyState icon={<SearchX size={20} />} title={tasks.length === 0 ? "No tasks yet" : "Nothing matches these filters"} />
+          <EmptyState icon={<SearchX size={20} />} title={tasks.length === 0 ? t("tasks.none") : t("tasks.noMatch")} />
         ) : (
           <>
             <TaskLineHeader />
             <div className="divide-y divide-slate-100">
-              {visible.map((t) => {
-                const state = checkStateOf(t.status);
-                const next = nextCheckStatus(t.status, myRole);
+              {visible.map((task) => {
+                const state = checkStateOf(task.status);
+                const next = nextCheckStatus(task.status, myRole);
                 return (
                   <TaskLine
-                    key={t.id}
+                    key={task.id}
                     columns
-                    serial={serialLabel(t.serial)}
-                    title={t.title}
-                    remark={t.brief}
-                    priority={t.priority}
+                    serial={serialLabel(task.serial)}
+                    title={task.title}
+                    remark={task.brief}
+                    priority={task.priority}
                     state={state}
-                    due={t}
-                    href={`/tasks/${t.id}`}
-                    siteName={site === "all" ? siteById[t.siteId]?.name : undefined}
-                    byName={assignerName(staffById[t.createdBy])}
-                    toNames={t.assigneeIds.map((id) => staffById[id]?.name ?? "?")}
-                    extra={<Counts comments={commentCounts[t.id]} proofs={proofCounts[t.id]} />}
+                    due={task}
+                    href={`/tasks/${task.id}`}
+                    siteName={site === "all" ? siteById[task.siteId]?.name : undefined}
+                    byName={assignerName(staffById[task.createdBy], t)}
+                    toNames={task.assigneeIds.map((id) => staffById[id]?.name ?? "?")}
+                    extra={<Counts comments={commentCounts[task.id]} proofs={proofCounts[task.id]} />}
                     check={
                       <TaskCheck
-                        id={t.id}
+                        id={task.id}
                         state={state}
                         next={next ? checkStateOf(next) : null}
                         action={toggleTaskDoneAction}
-                        label={state === "full" ? `Reopen ${t.title}` : `Mark ${t.title} as done`}
+                        label={state === "full" ? t("tasks.reopen", { title: task.title }) : t("tasks.markDone", { title: task.title })}
                       />
                     }
                   />

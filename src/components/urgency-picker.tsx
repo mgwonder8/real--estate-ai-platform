@@ -1,7 +1,8 @@
 "use client";
 
 import { UrgencyDot } from "@/components/ui/status-pill";
-import { PRIORITY_META, PRIORITY_OPTIONS } from "@/lib/task-meta";
+import { PRIORITY_OPTIONS } from "@/lib/task-meta";
+import { useT } from "@/lib/i18n/client";
 import type { TaskPriority } from "@/lib/data/types";
 
 export function UrgencyPicker({
@@ -13,8 +14,9 @@ export function UrgencyPicker({
   onChange: (p: TaskPriority) => void;
   compact?: boolean;
 }) {
+  const t = useT();
   return (
-    <div role="radiogroup" aria-label="Urgency" className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1">
+    <div role="radiogroup" aria-label={t("nt.urgency")} className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1">
       {PRIORITY_OPTIONS.map((p) => {
         const on = value === p;
         return (
@@ -29,7 +31,7 @@ export function UrgencyPicker({
             }`}
           >
             <UrgencyDot priority={p} still={!on} />
-            {PRIORITY_META[p].label}
+            {t(`priority.${p}` as const)}
           </button>
         );
       })}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bell, BellOff, BellRing } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 
 function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -13,6 +14,7 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
 type Status = "unsupported" | "loading" | "off" | "on" | "denied";
 
 export function NotificationsToggle() {
+  const t = useT();
   const [status, setStatus] = useState<Status>("loading");
 
   useEffect(() => {
@@ -79,7 +81,7 @@ export function NotificationsToggle() {
 
   if (status === "on") {
     return (
-      <span title="Notifications on" className={`${base} text-brand-navy`}>
+      <span title={t("notif.on")} className={`${base} text-brand-navy`}>
         <BellRing size={18} />
       </span>
     );
@@ -87,14 +89,14 @@ export function NotificationsToggle() {
 
   if (status === "denied") {
     return (
-      <span title="Notifications blocked in browser settings" className={`${base} text-slate-300`}>
+      <span title={t("notif.blocked")} className={`${base} text-slate-300`}>
         <BellOff size={18} />
       </span>
     );
   }
 
   return (
-    <button onClick={enable} title="Turn on notifications" className={`${base} relative cursor-pointer text-slate-500 hover:bg-slate-100`}>
+    <button onClick={enable} title={t("notif.turnOn")} className={`${base} relative cursor-pointer text-slate-500 hover:bg-slate-100`}>
       <Bell size={18} />
       <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-brand-gold ring-2 ring-white" />
     </button>

@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { auth } from "@/auth";
-import { createPersonalTask, deletePersonalTask, togglePersonalTask } from "@/lib/data/personal-tasks";
+import { PersonalTaskError, createPersonalTask, deletePersonalTask, togglePersonalTask } from "@/lib/data/personal-tasks";
+import { getT } from "@/lib/i18n/server";
 import { getStaff } from "@/lib/data/staff";
 import { notifyManyStaff } from "@/lib/push/send";
 import { PRIORITY_OPTIONS } from "@/lib/task-meta";
@@ -11,11 +12,20 @@ import type { TaskPriority } from "@/lib/data/types";
 
 async function me() {
   const session = await auth();
-  if (!session?.user) throw new Error("Not authenticated");
+  if (!session?.user) throw new Error((await getT())("common.notAuthenticated"));
   return session.user.id;
 }
 
+async function explain(err: unknown): Promise<never> {
+  if (err instanceof PersonalTaskError) {
+    const t = await getT();
+    throw new Error(err.code === "onlyCreator" ? t("pe.onlyCreator") : t("pe.notFound"));
+  }
+  throw err;
+}
+
 export async function addPersonalTaskAction(formData: FormData): Promise<void> {
+  const t = await getT();
   const fromId = await me();
   const partnerId = String(formData.get("partnerId") ?? "");
   const title = String(formData.get("title") ?? "").trim();
@@ -24,10 +34,10 @@ export async function addPersonalTaskAction(formData: FormData): Promise<void> {
   const priority = PRIORITY_OPTIONS.includes(priorityRaw) ? priorityRaw : "normal";
   const forId = formData.get("for") === "me" ? fromId : partnerId;
 
-  if (!title) throw new Error("Add a task name");
-  if (!partnerId || partnerId === fromId) throw new Error("Pick who this is with");
+  if (!title) throw new Error(t("pe.needName"));
+  if (!partnerId || partnerId === fromId) throw new Error(t("pe.needPartner"));
   const partner = await getStaff(partnerId);
-  if (!partner) throw new Error("Person not found");
+  if (!partner) throw new Error(t("pe.personMissing"));
 
   await createPersonalTask({ fromId, toId: partnerId, forId, title, remark, priority });
   revalidatePath("/personal", "layout");
@@ -43,11 +53,11 @@ export async function addPersonalTaskAction(formData: FormData): Promise<void> {
 }
 
 export async function togglePersonalTaskAction(id: string): Promise<void> {
-  await togglePersonalTask(id, await me());
+  await togglePersonalTask(id, await me()).catch(explain);
   revalidatePath("/personal", "layout");
 }
 
 export async function deletePersonalTaskAction(id: string): Promise<void> {
-  await deletePersonalTask(id, await me());
+  await deletePersonalTask(id, await me()).catch(explain);
   revalidatePath("/personal", "layout");
 }

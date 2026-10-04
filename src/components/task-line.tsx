@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, ChevronDown, MapPin } from "lucide-react";
 import { DueBadge, PriorityPill, UrgencyDot } from "@/components/ui/status-pill";
 import { PRIORITY_META } from "@/lib/task-meta";
+import { useT } from "@/lib/i18n/client";
 import type { CheckState } from "@/lib/task-meta";
 import type { TaskPriority, TaskStatus } from "@/lib/data/types";
 
@@ -42,6 +45,7 @@ export function TaskLine({
   /** Spread who/urgency/due into aligned columns on wide screens. */
   columns?: boolean;
 }) {
+  const t = useT();
   const finished = state !== "none";
   const tone =
     state === "full"
@@ -59,7 +63,7 @@ export function TaskLine({
         <span className={`break-words text-[15px] font-semibold leading-snug ${finished ? "text-emerald-900" : "text-slate-900"}`}>{title}</span>
         {state === "half" && (
           <span className="ml-2 inline-block whitespace-nowrap rounded-full bg-emerald-100 px-2 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
-            Awaiting approval
+            {t("status.completed")}
           </span>
         )}
       </span>
@@ -156,15 +160,16 @@ export function TaskLine({
 }
 
 export function TaskLineHeader() {
+  const t = useT();
   return (
     <div className="hidden items-center gap-2 border-b border-slate-100 bg-slate-50/80 py-2 pl-3 pr-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400 lg:flex">
-      <span className="w-9 shrink-0">No.</span>
+      <span className="w-9 shrink-0">{t("tasks.colNo")}</span>
       <span className="w-11 shrink-0" />
-      <span className="flex-1">Task</span>
-      <span className={`shrink-0 ${COL.by}`}>Assigned by</span>
-      <span className={`shrink-0 ${COL.to}`}>Assigned to</span>
-      <span className={`shrink-0 ${COL.urgency}`}>Urgency</span>
-      <span className={`shrink-0 ${COL.due}`}>Due</span>
+      <span className="flex-1">{t("tasks.colTask")}</span>
+      <span className={`shrink-0 ${COL.by}`}>{t("tasks.assignedBy")}</span>
+      <span className={`shrink-0 ${COL.to}`}>{t("tasks.assignedTo")}</span>
+      <span className={`shrink-0 ${COL.urgency}`}>{t("tasks.colUrgency")}</span>
+      <span className={`shrink-0 ${COL.due}`}>{t("tasks.colDue")}</span>
     </div>
   );
 }

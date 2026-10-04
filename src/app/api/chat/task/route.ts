@@ -7,27 +7,30 @@ import { listStaff, getStaff } from "@/lib/data/staff";
 import { createTask } from "@/lib/data/tasks";
 import { sendMessage } from "@/lib/data/messages";
 import { notifyManyStaff } from "@/lib/push/send";
+import { getT } from "@/lib/i18n/server";
 
 export async function POST(req: NextRequest) {
+  const t = await getT();
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: t("common.notAuthenticated") }, { status: 401 });
   if (session.user.role === "site_staff") {
-    return NextResponse.json({ error: "Only the office can assign tasks" }, { status: 403 });
+    return NextResponse.json({ error: t("cw.onlyOffice") }, { status: 403 });
   }
 
   const { toStaffId, instruction, attachment } = await req.json();
   if (!toStaffId || !String(instruction ?? "").trim()) {
-    return NextResponse.json({ error: "Describe the task after /task" }, { status: 400 });
+    return NextResponse.json({ error: t("cw.describe") }, { status: 400 });
   }
   if (!isAiEnabled()) {
-    return NextResponse.json({ error: "AI is not configured on the server" }, { status: 400 });
+    return NextResponse.json({ error: t("cw.aiOff") }, { status: 400 });
   }
 
   const [sites, staff, partner] = await Promise.all([listSites(), listStaff(), getStaff(toStaffId)]);
-  if (!partner) return NextResponse.json({ error: "Recipient not found" }, { status: 404 });
+  if (!partner) return NextResponse.json({ error: t("cw.recipientMissing") }, { status: 404 });
 
   const draft = await parseTaskFromChat({
     message: String(instruction).trim(),
+    language: t.locale,
     sites: sites.map((s) => ({ id: s.id, name: s.name })),
     staff: staff.filter((s) => s.active).map((s) => ({ id: s.id, name: s.name, role: s.role, siteId: s.siteId })),
   });

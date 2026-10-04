@@ -8,6 +8,7 @@ import { listStaff } from "@/lib/data/staff";
 import { listAllProofs } from "@/lib/data/proofs";
 import { listAllTaskComments } from "@/lib/data/task-comments";
 import { TaskBrowser, type TaskFilters } from "@/app/(app)/tasks/task-browser";
+import { getT } from "@/lib/i18n/server";
 
 const VIEWS = ["all", "open", "review", "done", "late"];
 
@@ -17,6 +18,7 @@ export default async function TasksPage({
   searchParams: Promise<{ status?: string; site?: string; staff?: string; by?: string; q?: string }>;
 }) {
   const sp = await searchParams;
+  const t = await getT();
   const [session, tasks, sites, staff, proofs, comments] = await Promise.all([
     auth(),
     listTasks(),
@@ -39,10 +41,10 @@ export default async function TasksPage({
   return (
     <>
       <PageHeader
-        title="Tasks"
+        title={t("tasks.title")}
         actions={
           <ButtonLink href="/tasks/new" className="hidden lg:inline-flex">
-            <Plus size={16} /> New task
+            <Plus size={16} /> {t("tasks.new")}
           </ButtonLink>
         }
       />

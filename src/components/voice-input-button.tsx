@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { AudioLines, Loader2, Square } from "lucide-react";
+import { useT } from "@/lib/i18n/client";
 
 type RecState = "idle" | "recording" | "transcribing" | "error";
 
@@ -12,6 +13,7 @@ export function VoiceInputButton({
   onTranscribed: (text: string) => void;
   size?: "md" | "lg";
 }) {
+  const t = useT();
   const [state, setState] = useState<RecState>("idle");
   const [error, setError] = useState<string | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -22,7 +24,7 @@ export function VoiceInputButton({
     setError(null);
     if (!navigator.mediaDevices?.getUserMedia) {
       setState("error");
-      setError("Voice not supported on this device.");
+      setError(t("voice.unsupported"));
       return;
     }
     try {
@@ -39,7 +41,7 @@ export function VoiceInputButton({
       setState("recording");
     } catch {
       setState("error");
-      setError("Microphone permission denied.");
+      setError(t("voice.micDenied"));
     }
   }
 
@@ -53,16 +55,17 @@ export function VoiceInputButton({
     const blob = new Blob(chunksRef.current, { type: "audio/webm" });
     const formData = new FormData();
     formData.append("audio", blob, "voice.webm");
+    formData.append("language", t.locale);
 
     try {
       const res = await fetch("/api/voice/transcribe", { method: "POST", body: formData });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Could not understand that. Try again.");
+      if (!res.ok) throw new Error(data.error || t("voice.couldNot"));
       onTranscribed(data.text as string);
       setState("idle");
     } catch (err) {
       setState("error");
-      setError(err instanceof Error ? err.message : "Could not understand that. Try again.");
+      setError(err instanceof Error ? err.message : t("voice.couldNot"));
     }
   }
 
@@ -80,8 +83,8 @@ export function VoiceInputButton({
         type="button"
         onClick={handleClick}
         disabled={state === "transcribing"}
-        aria-label={recording ? "Stop recording" : "Speak your task"}
-        title={recording ? "Tap to stop" : "Speak"}
+        aria-label={recording ? t("voice.stop") : t("voice.speak")}
+        title={recording ? t("voice.tapStop") : t("voice.speakShort")}
         className={`relative flex ${dim} cursor-pointer items-center justify-center rounded-xl transition active:scale-95 ${
           recording
             ? "bg-red-500 text-white shadow-lg shadow-red-500/30"

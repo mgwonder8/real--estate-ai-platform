@@ -5,6 +5,7 @@ import { randomInt } from "crypto";
 import { createStaff, updateStaff, setStaffActive } from "@/lib/data/staff";
 import { createUser } from "@/lib/data/users";
 import type { Role } from "@/lib/data/types";
+import { getT } from "@/lib/i18n/server";
 
 export type CreateStaffState =
   | { status: "idle" }
@@ -32,7 +33,7 @@ export async function createStaffAction(
   const phone = String(formData.get("phone") ?? "");
 
   if (!name || !email) {
-    return { status: "error", message: "Name and email are required." };
+    return { status: "error", message: (await getT())("as.needNameEmail") };
   }
 
   const staff = await createStaff({ name, role, siteId, extraSiteIds, phone, email });
@@ -63,7 +64,7 @@ export async function updateStaffAction(
   const phone = String(formData.get("phone") ?? "");
 
   if (!id || !name) {
-    return { status: "error", message: "Name is required." };
+    return { status: "error", message: (await getT())("es.needName") };
   }
 
   await updateStaff(id, { name, role, siteId, extraSiteIds, teamViewSiteIds, phone });

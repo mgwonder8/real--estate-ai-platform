@@ -4,7 +4,8 @@ import { after } from "next/server";
 import { ArrowLeft, ListChecks, Lock, MessageCircle } from "lucide-react";
 import { auth } from "@/auth";
 import { Avatar } from "@/components/ui/avatar";
-import { ROLE_LABEL } from "@/lib/roles";
+import { roleLabel } from "@/lib/roles";
+import { getT } from "@/lib/i18n/server";
 import { getStaff } from "@/lib/data/staff";
 import { listMessagesBetween, markConversationRead } from "@/lib/data/messages";
 import { listPersonalTasksBetween } from "@/lib/data/personal-tasks";
@@ -18,6 +19,7 @@ export default async function PersonalThreadPage({
   params: Promise<{ staffId: string }>;
   searchParams: Promise<{ view?: string }>;
 }) {
+  const tr = await getT();
   const session = await auth();
   const me = session!.user.id;
   const { staffId } = await params;
@@ -44,7 +46,7 @@ export default async function PersonalThreadPage({
         <div className="flex items-center gap-3 px-3 py-2.5 lg:px-4 lg:py-3">
           <Link
             href="/personal"
-            aria-label="Back to personal"
+            aria-label={tr("pe.backTo")}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100"
           >
             <ArrowLeft size={18} />
@@ -53,13 +55,13 @@ export default async function PersonalThreadPage({
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-slate-900">{partner.name}</p>
             <p className="flex items-center gap-1 text-xs text-slate-500">
-              <Lock size={11} className="text-brand-gold" /> Private · {ROLE_LABEL[partner.role] ?? partner.role}
+              <Lock size={11} className="text-brand-gold" /> {tr("pe.private")} · {roleLabel(partner.role, tr)}
             </p>
           </div>
         </div>
         <div className="grid grid-cols-2 px-3 lg:px-4">
-          <Tab href={`/personal/${staffId}`} on={!showChat} icon={<ListChecks size={15} />} label="Tasks" count={openCount} />
-          <Tab href={`/personal/${staffId}?view=chat`} on={showChat} icon={<MessageCircle size={15} />} label="Chat" count={unread} badge />
+          <Tab href={`/personal/${staffId}`} on={!showChat} icon={<ListChecks size={15} />} label={tr("pe.tasksTab")} count={openCount} />
+          <Tab href={`/personal/${staffId}?view=chat`} on={showChat} icon={<MessageCircle size={15} />} label={tr("pe.chatTab")} count={unread} badge />
         </div>
       </div>
 
@@ -78,7 +80,7 @@ export default async function PersonalThreadPage({
         <PersonalTaskBoard me={me} partner={{ id: partner.id, name: partner.name }} tasks={tasks} />
       )}
 
-      <p className="sr-only">Only you and {firstName} can see this thread.</p>
+      <p className="sr-only">{tr("cw.onlyYou", { name: firstName })}</p>
     </div>
   );
 }

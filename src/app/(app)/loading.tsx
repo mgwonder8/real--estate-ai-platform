@@ -1,6 +1,9 @@
-export default function Loading() {
+import { getT } from "@/lib/i18n/server";
+
+export default async function Loading() {
+  const t = await getT();
   return (
-    <div aria-busy="true" aria-label="Loading" className="space-y-6">
+    <div aria-busy="true" aria-label={t("common.loading")} className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="skeleton h-7 w-48 rounded-lg" />
         <div className="skeleton h-10 w-32 rounded-xl" />

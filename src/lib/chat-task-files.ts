@@ -2,6 +2,7 @@ import { getTask } from "@/lib/data/tasks";
 import { addProof } from "@/lib/data/proofs";
 import { addTaskReference } from "@/lib/data/task-references";
 import { isImageFile } from "@/lib/files";
+import { getT } from "@/lib/i18n/server";
 
 export type SavedToTask = { taskId: string; title: string; kind: "proof" | "reference" };
 
@@ -15,12 +16,13 @@ export async function saveChatFileToTask(input: {
   senderRole: string;
   attachment: { url: string; name: string; type: string };
 }): Promise<SavedToTask> {
+  const t = await getT();
   const task = await getTask(input.taskId);
-  if (!task) throw new Error("That task no longer exists");
+  if (!task) throw new Error(t("cw.taskGone"));
 
   const isStaff = input.senderRole === "site_staff";
   if (isStaff && !task.assigneeIds.includes(input.senderId)) {
-    throw new Error("You can only add files to tasks assigned to you");
+    throw new Error(t("cw.notYourTask"));
   }
 
   const { url, name, type } = input.attachment;

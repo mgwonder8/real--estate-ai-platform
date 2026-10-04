@@ -23,6 +23,13 @@ function toPersonalTask(data: Record<string, string>): PersonalTask {
   };
 }
 
+/** Thrown for cases people can hit; the action layer turns the code into their language. */
+export class PersonalTaskError extends Error {
+  constructor(public code: "notFound" | "onlyCreator") {
+    super(code);
+  }
+}
+
 const between = (t: PersonalTask, a: string, b: string) =>
   (t.fromId === a && t.toId === b) || (t.fromId === b && t.toId === a);
 
@@ -74,9 +81,9 @@ export async function createPersonalTask(input: {
 
 async function findOwned(id: string, staffId: string) {
   const row = await findRowById(TAB, id);
-  if (!row) throw new Error("Task not found");
+  if (!row) throw new PersonalTaskError("notFound");
   const task = toPersonalTask(row.data);
-  if (task.fromId !== staffId && task.toId !== staffId) throw new Error("Task not found");
+  if (task.fromId !== staffId && task.toId !== staffId) throw new PersonalTaskError("notFound");
   return { row, task };
 }
 
@@ -92,6 +99,6 @@ export async function togglePersonalTask(id: string, staffId: string): Promise<P
 /** Only whoever created it can delete it. */
 export async function deletePersonalTask(id: string, staffId: string): Promise<void> {
   const { row, task } = await findOwned(id, staffId);
-  if (task.fromId !== staffId) throw new Error("Only the person who added this task can delete it");
+  if (task.fromId !== staffId) throw new PersonalTaskError("onlyCreator");
   await clearRow(TAB, row.rowNumber);
 }
