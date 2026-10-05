@@ -15,7 +15,7 @@ const VIEWS = ["all", "open", "review", "done", "late"];
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; site?: string; staff?: string; by?: string; q?: string }>;
+  searchParams: Promise<{ status?: string; site?: string; staff?: string; by?: string; q?: string; group?: string }>;
 }) {
   const sp = await searchParams;
   const t = await getT();
@@ -36,6 +36,7 @@ export default async function TasksPage({
     staff: sp.staff ?? "all",
     by: sp.by ?? "all",
     q: sp.q ?? "",
+    group: sp.group === "site" || sp.group === "none" ? sp.group : "person",
   };
 
   return (

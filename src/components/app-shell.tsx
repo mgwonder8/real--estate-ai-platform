@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
 import { MobileNav } from "@/components/mobile-nav";
 import { LiveRefresh } from "@/components/live-refresh";
+import { NavProgress } from "@/components/nav-progress";
 import { signOutAction } from "@/lib/sign-out-action";
 
 export function AppShell({
@@ -30,6 +31,7 @@ export function AppShell({
 
   return (
     <div className="flex min-h-screen bg-background">
+      <NavProgress />
       <AppSidebar
         role={role}
         name={name}

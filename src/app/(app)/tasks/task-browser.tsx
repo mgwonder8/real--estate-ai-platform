@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, X, SearchX, Camera, MessageSquare, UserRound } from "lucide-react";
+import { Search, X, SearchX, Camera, MessageSquare, UserRound, Building2, List, Users, CheckCircle2 } from "lucide-react";
 import { Card, EmptyState } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { TaskLine, TaskLineHeader } from "@/components/task-line";
 import { TaskCheck } from "@/components/task-check";
 import { toggleTaskDoneAction } from "@/app/(app)/tasks/actions";
-import { checkStateOf, isOpen, isOverdue, nextCheckStatus, serialLabel, sortByUrgency, firstName } from "@/lib/task-meta";
+import { checkStateOf, isFinished, isOpen, isOverdue, nextCheckStatus, serialLabel, sortByUrgency, firstName } from "@/lib/task-meta";
+import { roleLabel } from "@/lib/roles";
 import { assignerName } from "@/lib/roles";
 import { useT } from "@/lib/i18n/client";
 import type { MessageKey } from "@/lib/i18n/messages";
@@ -15,11 +16,19 @@ import type { Site, Staff, Task } from "@/lib/data/types";
 
 type View = "all" | "open" | "review" | "done" | "late";
 
-export type TaskFilters = { status: View; site: string; staff: string; by: string; q: string };
+export type GroupBy = "person" | "site" | "none";
+
+export type TaskFilters = { status: View; site: string; staff: string; by: string; q: string; group: GroupBy };
+
+const GROUPS: { key: GroupBy; label: MessageKey; icon: typeof Users }[] = [
+  { key: "person", label: "tasks.groupPerson", icon: Users },
+  { key: "site", label: "tasks.groupSite", icon: Building2 },
+  { key: "none", label: "tasks.groupNone", icon: List },
+];
 
 const VIEWS: { key: View; label: MessageKey; dot?: string }[] = [
   { key: "all", label: "views.all" },
-  { key: "open", label: "views.open", dot: "bg-sky-500" },
+  { key: "open", label: "views.open", dot: "bg-amber-400" },
   { key: "review", label: "views.review", dot: "bg-sky-500" },
   { key: "done", label: "views.done", dot: "bg-emerald-500" },
   { key: "late", label: "views.late", dot: "bg-red-500" },
@@ -64,6 +73,7 @@ export function TaskBrowser({
   const [person, setPerson] = useState(initial.staff);
   const [by, setBy] = useState(initial.by);
   const [q, setQ] = useState(initial.q);
+  const [group, setGroup] = useState<GroupBy>(initial.group);
 
   const siteById = useMemo(() => Object.fromEntries(sites.map((s) => [s.id, s])), [sites]);
   const staffById = useMemo(() => Object.fromEntries(staff.map((s) => [s.id, s])), [staff]);
@@ -83,9 +93,10 @@ export function TaskBrowser({
     if (person !== "all") params.set("staff", person);
     if (by !== "all") params.set("by", by);
     if (q.trim()) params.set("q", q.trim());
+    if (group !== "person") params.set("group", group);
     const qs = params.toString();
     window.history.replaceState(null, "", qs ? `/tasks?${qs}` : "/tasks");
-  }, [view, site, person, by, q]);
+  }, [view, site, person, by, q, group]);
 
   const scoped = useMemo(() => {
     const term = q.trim().toLowerCase().replace(/^#/, "");
@@ -108,6 +119,32 @@ export function TaskBrowser({
   );
 
   const visible = useMemo(() => arrange(scoped.filter((t) => inView(t, view))), [scoped, view]);
+  const groups = useMemo(() => {
+    if (group === "none") return [{ key: "all", kind: "none" as const, title: "", sub: "", tasks: visible }];
+    if (group === "site") {
+      return sites
+        .map((s) => ({ key: s.id, kind: "site" as const, title: s.name, sub: s.address, tasks: visible.filter((task) => task.siteId === s.id) }))
+        .filter((g) => g.tasks.length > 0);
+    }
+    const ids = Array.from(new Set(visible.flatMap((task) => task.assigneeIds)));
+    const byPerson = ids
+      .map((id) => {
+        const member = staffById[id];
+        return {
+          key: id,
+          kind: "person" as const,
+          title: member?.name ?? "?",
+          sub: member ? roleLabel(member.role, t) : "",
+          tasks: visible.filter((task) => task.assigneeIds.includes(id)),
+        };
+      })
+      .sort((a, b) => b.tasks.filter(isOpen).length - a.tasks.filter(isOpen).length || a.title.localeCompare(b.title));
+    const nobody = visible.filter((task) => task.assigneeIds.length === 0);
+    return nobody.length
+      ? [...byPerson, { key: "nobody", kind: "person" as const, title: t("common.unassigned"), sub: "", tasks: nobody }]
+      : byPerson;
+  }, [group, visible, sites, staffById, t]);
+
   const anyFilter = view !== "all" || site !== "all" || person !== "all" || by !== "all" || !!q.trim();
 
   return (
@@ -209,47 +246,98 @@ export function TaskBrowser({
         )}
       </Card>
 
-      <Card className="overflow-hidden">
-        {visible.length === 0 ? (
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-medium text-slate-500">{t("tasks.groupBy")}</p>
+        <div role="radiogroup" aria-label={t("tasks.groupBy")} className="flex gap-1 rounded-xl bg-white p-1 ring-1 ring-slate-200">
+          {GROUPS.map(({ key, label, icon: Icon }) => {
+            const on = group === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => setGroup(key)}
+                className={`flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition ${
+                  on ? "bg-brand-navy text-white shadow-sm" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                }`}
+              >
+                <Icon size={14} />
+                {t(label)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {visible.length === 0 ? (
+        <Card>
           <EmptyState icon={<SearchX size={20} />} title={tasks.length === 0 ? t("tasks.none") : t("tasks.noMatch")} />
-        ) : (
-          <>
-            <TaskLineHeader />
-            <div className="divide-y divide-slate-100">
-              {visible.map((task) => {
-                const state = checkStateOf(task.status);
-                const next = nextCheckStatus(task.status, myRole);
-                return (
-                  <TaskLine
-                    key={task.id}
-                    columns
-                    serial={serialLabel(task.serial)}
-                    title={task.title}
-                    remark={task.brief}
-                    priority={task.priority}
-                    state={state}
-                    due={task}
-                    href={`/tasks/${task.id}`}
-                    siteName={site === "all" ? siteById[task.siteId]?.name : undefined}
-                    byName={assignerName(staffById[task.createdBy], t)}
-                    toNames={task.assigneeIds.map((id) => staffById[id]?.name ?? "?")}
-                    extra={<Counts comments={commentCounts[task.id]} proofs={proofCounts[task.id]} />}
-                    check={
-                      <TaskCheck
-                        id={task.id}
-                        state={state}
-                        next={next ? checkStateOf(next) : null}
-                        action={toggleTaskDoneAction}
-                        label={state === "full" ? t("tasks.reopen", { title: task.title }) : t("tasks.markDone", { title: task.title })}
-                      />
-                    }
-                  />
-                );
-              })}
-            </div>
-          </>
-        )}
-      </Card>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {groups.map((g, gi) => (
+            <Card key={g.key} className="animate-fade-up overflow-hidden">
+              {g.kind !== "none" && (
+                <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-4 py-3 sm:px-5">
+                  {g.kind === "person" ? (
+                    <Avatar name={g.title} size="md" />
+                  ) : (
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-navy text-brand-gold">
+                      <Building2 size={18} />
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="break-words text-[15px] font-semibold text-slate-900">{g.title}</p>
+                    {g.sub && <p className="break-words text-xs text-slate-500">{g.sub}</p>}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5 text-xs font-semibold">
+                    <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700 ring-1 ring-inset ring-amber-200">
+                      {t("sd.openCount", { n: g.tasks.filter(isOpen).length })}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                      <CheckCircle2 size={12} /> {g.tasks.filter(isFinished).length}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {gi === 0 || g.kind === "none" ? <TaskLineHeader /> : null}
+              <div className="divide-y divide-slate-100">
+                {g.tasks.map((task) => {
+                  const state = checkStateOf(task.status);
+                  const next = nextCheckStatus(task.status, myRole);
+                  return (
+                    <TaskLine
+                      key={task.id}
+                      columns
+                      serial={serialLabel(task.serial)}
+                      title={task.title}
+                      remark={task.brief}
+                      priority={task.priority}
+                      state={state}
+                      due={task}
+                      href={`/tasks/${task.id}`}
+                      siteName={g.kind === "site" ? undefined : siteById[task.siteId]?.name}
+                      byName={assignerName(staffById[task.createdBy], t)}
+                      toNames={task.assigneeIds.map((id) => staffById[id]?.name ?? "?")}
+                      extra={<Counts comments={commentCounts[task.id]} proofs={proofCounts[task.id]} />}
+                      check={
+                        <TaskCheck
+                          id={task.id}
+                          state={state}
+                          next={next ? checkStateOf(next) : null}
+                          action={toggleTaskDoneAction}
+                          label={state === "full" ? t("tasks.reopen", { title: task.title }) : t("tasks.markDone", { title: task.title })}
+                        />
+                      }
+                    />
+                  );
+                })}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

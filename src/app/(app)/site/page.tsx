@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CheckCircle2, Eye, FileText, Link2, MessageSquare, Paperclip, UsersRound } from "lucide-react";
 import { auth } from "@/auth";
 import { Card, EmptyState } from "@/components/ui/card";
+import { Avatar } from "@/components/ui/avatar";
 import { ExpandableTask } from "@/components/expandable-task";
 import { TaskCheck } from "@/components/task-check";
 import { TaskFiles } from "@/components/task-files";
@@ -84,7 +85,7 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
         priority={t.priority}
         state={state}
         due={t}
-        siteName={own ? (multiSite ? siteById[t.siteId]?.name : undefined) : undefined}
+        siteName={siteById[t.siteId]?.name}
         byName={byLabel(t.createdBy)}
         toNames={own ? (others.length ? [tr("common.you"), ...others.map((id) => firstName(staffById[id]?.name))] : undefined) : t.assigneeIds.map((id) => staffById[id]?.name ?? "?")}
         extra={
@@ -233,7 +234,22 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
                   {ordered.length === 0 ? (
                     <EmptyState icon={<UsersRound size={20} />} title={tr("ss.noOther")} />
                   ) : (
-                    <div className="divide-y divide-slate-100">{ordered.map((t) => renderTask(t, false))}</div>
+                    <div className="divide-y divide-slate-200/70">
+                      {Array.from(new Set(ordered.flatMap((t) => t.assigneeIds)))
+                        .filter((pid) => pid !== me)
+                        .map((pid) => {
+                          const theirs = ordered.filter((t) => t.assigneeIds.includes(pid));
+                          return (
+                            <div key={pid}>
+                              <PersonHeader
+                                name={staffById[pid]?.name ?? tr("common.unknown")}
+                                counts={tr("grp.counts", { open: theirs.filter(isOpen).length, done: theirs.filter(isFinished).length })}
+                              />
+                              <div className="divide-y divide-slate-100">{theirs.map((t) => renderTask(t, false))}</div>
+                            </div>
+                          );
+                        })}
+                    </div>
                   )}
                 </Card>
               </section>
@@ -300,5 +316,15 @@ function SectionTitle({ label, count, tone = "text-slate-500", suffix }: { label
         {suffix ? ` ${suffix}` : ""}
       </span>
     </p>
+  );
+}
+
+function PersonHeader({ name, counts }: { name: string; counts: string }) {
+  return (
+    <div className="flex items-center gap-2.5 bg-slate-50/90 px-4 py-2.5 sm:px-5">
+      <Avatar name={name} size="sm" />
+      <span className="min-w-0 flex-1 break-words text-sm font-semibold text-slate-900">{name}</span>
+      <span className="shrink-0 text-xs font-medium text-slate-500">{counts}</span>
+    </div>
   );
 }
