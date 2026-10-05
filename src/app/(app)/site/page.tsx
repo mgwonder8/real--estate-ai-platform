@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { ExpandableTask } from "@/components/expandable-task";
 import { TaskCheck } from "@/components/task-check";
 import { TaskFiles } from "@/components/task-files";
+import { SiteTaskBoard, type BoardColumn } from "@/components/site-task-board";
 import { listTasks } from "@/lib/data/tasks";
 import { listSites } from "@/lib/data/sites";
 import { listAllTaskComments } from "@/lib/data/task-comments";
@@ -13,7 +14,7 @@ import { listAllProofs } from "@/lib/data/proofs";
 import { listAllTaskReferences } from "@/lib/data/task-references";
 import { allSiteIds, getStaff, listStaff, teamViewSites } from "@/lib/data/staff";
 import { listQueriesRaisedBy } from "@/lib/data/queries";
-import { checkStateOf, firstName, isFinished, isOpen, nextCheckStatus, serialLabel, sortByUrgency, timeAgo } from "@/lib/task-meta";
+import { checkStateOf, firstName, isFinished, isOpen, isOverdue, nextCheckStatus, serialLabel, sortByUrgency, timeAgo } from "@/lib/task-meta";
 import { assignerName } from "@/lib/roles";
 import { greetingIST, greetingName } from "@/lib/greeting";
 import { getT } from "@/lib/i18n/server";
@@ -58,6 +59,39 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
 
   const openMine = sortByUrgency(mine.filter(isOpen));
   const doneMine = mine.filter(isFinished).sort(byRecent);
+
+  // One board column per site this person works at: their own work, plus teammates' work where they can see it.
+  const BOARD_LIMIT = 8;
+  const columns: BoardColumn[] = mySiteIds.map((siteId) => {
+    const list = tasks.filter(
+      (t) => t.siteId === siteId && (t.assigneeIds.includes(me) || teamSiteIds.includes(siteId))
+    );
+    const ordered = [
+      ...sortByUrgency(list.filter(isOpen)),
+      ...list.filter((t) => t.status === "completed").sort(byRecent),
+      ...list.filter((t) => t.status === "approved").sort(byRecent),
+    ];
+    const done = list.filter((t) => t.status === "approved").length;
+    return {
+      siteId,
+      name: siteById[siteId]?.name ?? tr("td.site"),
+      pct: list.length ? Math.round((done / list.length) * 100) : 0,
+      open: list.filter(isOpen).length,
+      late: list.filter(isOverdue).length,
+      more: Math.max(0, ordered.length - BOARD_LIMIT),
+      tasks: ordered.slice(0, BOARD_LIMIT).map((t) => ({
+        id: t.id,
+        serial: t.serial,
+        title: t.title,
+        status: t.status,
+        priority: t.priority,
+        deadline: t.deadline,
+        people: t.assigneeIds.map((id) => (id === me ? tr("common.you") : firstName(staffById[id]?.name))).join(", "),
+        by: byLabel(t.createdBy),
+        canTick: t.assigneeIds.includes(me),
+      })),
+    };
+  });
 
   function renderTask(t: Task, own: boolean) {
     const state = checkStateOf(t.status);
@@ -176,6 +210,8 @@ export default async function SiteStaffPage({ searchParams }: { searchParams: Pr
           <p className="mt-0.5 text-sm text-slate-500">{mySiteIds.map((id) => siteById[id]?.name).filter(Boolean).join(" · ")}</p>
         )}
       </div>
+
+      {columns.length > 0 && <SiteTaskBoard columns={columns} role="site_staff" seeAllHref={null} />}
 
       {teamSiteIds.length > 0 && (
         <div className="mb-5 grid grid-cols-2 gap-1 rounded-2xl bg-white p-1.5 ring-1 ring-slate-200/80">

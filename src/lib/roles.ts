@@ -6,12 +6,12 @@ export function roleLabel(role: string, t: T): string {
   return t("role.siteStaff");
 }
 
+/** The signed-in person's name as shown in the menu; falls back to the company for an unnamed owner account. */
 export function displayName(name: string, role: string) {
-  return role === "owner" ? "Millennium Group" : name;
+  return name?.trim() || (role === "owner" ? "Millennium Group" : "");
 }
 
-/** Who gave a task, as shown on task rows. The owner account reads as "Owner". */
+/** Who gave a task, shown by their own name so it is clear which owner or office person it was. */
 export function assignerName(staff: { name: string; role: string } | undefined, t: T): string {
-  if (!staff) return t("tasks.assigner.office");
-  return staff.role === "owner" ? t("tasks.assigner.owner") : staff.name;
+  return staff?.name || t("tasks.assigner.office");
 }

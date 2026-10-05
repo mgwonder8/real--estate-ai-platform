@@ -7,7 +7,7 @@ export const LOCALE_COOKIE = "lang";
 /** How each language names itself, so people can find theirs even when the page is in another language. */
 export const LOCALE_NAME: Record<Locale, string> = {
   en: "English",
-  hi: "हिन्दी",
+  hi: "हिंदी",
   mr: "मराठी",
 };
 
@@ -28,8 +28,8 @@ export const LOCALE_TAG: Record<Locale, string> = {
 /** Language names as the AI should be told to write them. */
 export const LOCALE_AI_NAME: Record<Locale, string> = {
   en: "English",
-  hi: "Hindi (Devanagari script)",
-  mr: "Marathi (Devanagari script)",
+  hi: "proper Hindi in Devanagari script, using Hindi words rather than English ones wherever a common Hindi word exists (for example कार्य for task, स्थल for site)",
+  mr: "proper Marathi in Devanagari script, using Marathi words rather than English ones wherever a common Marathi word exists (for example कार्य for task, स्थळ for site)",
 };
 
 export function isLocale(value: unknown): value is Locale {

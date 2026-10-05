@@ -36,7 +36,7 @@ export interface ParsedTaskDraft {
   brief: string;
   siteId: string | null;
   assigneeIds: string[];
-  priority: "low" | "normal" | "high" | "urgent";
+  priority: "low" | "normal" | "urgent";
   deadline: string | null;
   proofRequired: boolean;
   confidence: "high" | "medium" | "low";
@@ -65,8 +65,8 @@ export async function parseTaskFromChat(input: {
       },
       priority: {
         type: "string",
-        enum: ["low", "normal", "high", "urgent"],
-        description: "urgent = must be done today or flagged as an emergency; high = important or soon; low = whenever possible",
+        enum: ["low", "normal", "urgent"],
+        description: "urgent = must be done today, soon, or is important or an emergency; low = whenever possible",
       },
       deadline: { type: ["string", "null"], description: "ISO date YYYY-MM-DD if a deadline is implied, else null" },
       proofRequired: { type: "boolean", description: "Whether photo/video proof of completion should be required" },

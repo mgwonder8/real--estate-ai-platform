@@ -58,6 +58,7 @@ export default async function DashboardPage() {
       open: list.filter(isOpen).length,
       late: list.filter(isOverdue).length,
       more: Math.max(0, ordered.length - BOARD_LIMIT),
+      href: `/sites/${site.id}`,
       tasks: ordered.slice(0, BOARD_LIMIT).map((task) => ({
         id: task.id,
         serial: task.serial,
@@ -66,6 +67,9 @@ export default async function DashboardPage() {
         priority: task.priority,
         deadline: task.deadline,
         people: task.assigneeIds.map((id) => firstName(staffById[id]?.name)).join(", "),
+        by: assignerName(staffById[task.createdBy], tr),
+        href: `/tasks/${task.id}`,
+        canTick: true,
       })),
     };
   });

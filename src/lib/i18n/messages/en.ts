@@ -69,7 +69,6 @@ export const en = {
   // Urgency
   "priority.low": "Low",
   "priority.normal": "Normal",
-  "priority.high": "High",
   "priority.urgent": "Urgent",
 
   // Task list views
@@ -479,7 +478,7 @@ export const en = {
   "board.openSite": "Open site",
   "board.empty": "No tasks yet",
   "tone.done": "Done",
-  "tone.high": "Urgent / High",
+  "tone.urgent": "Urgent",
   "tone.progress": "In progress",
   "tone.review": "Awaiting approval",
   "tone.scheduled": "Scheduled",

@@ -39,23 +39,22 @@ export const STATUS_META: Record<
 
 export const PRIORITY_META: Record<TaskPriority, { dot: string; pill: string; edge: string; blink: boolean }> = {
   urgent: { dot: "bg-red-500", pill: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-200", edge: "bg-red-500", blink: true },
-  high: { dot: "bg-orange-500", pill: "bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200", edge: "bg-orange-400", blink: false },
   normal: { dot: "bg-sky-500", pill: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-100", edge: "bg-sky-400", blink: false },
   low: { dot: "bg-slate-300", pill: "bg-slate-100 text-slate-600", edge: "bg-slate-300", blink: false },
 };
 
 /**
  * The colour a task wears everywhere (dashboard board, task rows, legend):
- * green done, blue awaiting approval, red urgent or high, yellow in progress, pink scheduled.
+ * green done, blue awaiting approval, red urgent, yellow in progress, pink scheduled.
  */
-export type TaskTone = "done" | "review" | "high" | "progress" | "scheduled";
+export type TaskTone = "done" | "review" | "urgent" | "progress" | "scheduled";
 
-export const TONE_ORDER: TaskTone[] = ["done", "high", "progress", "review", "scheduled"];
+export const TONE_ORDER: TaskTone[] = ["done", "urgent", "progress", "review", "scheduled"];
 
 export function taskTone(task: Pick<Task, "status" | "priority">): TaskTone {
   if (task.status === "approved") return "done";
   if (task.status === "completed") return "review";
-  if (task.priority === "urgent" || task.priority === "high") return "high";
+  if (task.priority === "urgent") return "urgent";
   if (task.status === "in_progress") return "progress";
   return "scheduled";
 }
@@ -75,7 +74,7 @@ export const TONE_META: Record<TaskTone, { card: string; row: string; edge: stri
     swatch: "bg-sky-500",
     title: "text-sky-950",
   },
-  high: {
+  urgent: {
     card: "border-red-200 bg-red-50",
     row: "bg-red-50/50 hover:bg-red-50/80",
     edge: "bg-red-500",
@@ -106,7 +105,7 @@ export const TASK_VIEW: Record<TaskStatus, "open" | "review" | "done"> = {
   approved: "done",
 };
 
-export const PRIORITY_OPTIONS: TaskPriority[] = ["low", "normal", "high", "urgent"];
+export const PRIORITY_OPTIONS: TaskPriority[] = ["low", "normal", "urgent"];
 
 export function isOpen(task: Pick<Task, "status">): boolean {
   return task.status === "pending" || task.status === "in_progress";
@@ -201,7 +200,7 @@ export function statusCounts(tasks: Pick<Task, "status">[]): Record<TaskStatus, 
 }
 
 export function sortByUrgency<T extends Pick<Task, "deadline" | "status" | "priority">>(tasks: T[]): T[] {
-  const priorityRank: Record<TaskPriority, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
+  const priorityRank: Record<TaskPriority, number> = { urgent: 0, normal: 1, low: 2 };
   return [...tasks].sort((a, b) => {
     const od = Number(isOverdue(b)) - Number(isOverdue(a));
     if (od !== 0) return od;

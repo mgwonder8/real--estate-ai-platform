@@ -16,7 +16,7 @@ export function UrgencyPicker({
 }) {
   const t = useT();
   return (
-    <div role="radiogroup" aria-label={t("nt.urgency")} className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1">
+    <div role="radiogroup" aria-label={t("nt.urgency")} className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
       {PRIORITY_OPTIONS.map((p) => {
         const on = value === p;
         return (

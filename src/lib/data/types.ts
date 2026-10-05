@@ -1,6 +1,6 @@
 export type Role = "owner" | "office_staff" | "site_staff";
 export type SiteStatus = "active" | "inactive";
-export type TaskPriority = "low" | "normal" | "high" | "urgent";
+export type TaskPriority = "low" | "normal" | "urgent";
 export type TaskStatus = "pending" | "in_progress" | "completed" | "approved";
 export type QueryStatus = "open" | "answered";
 

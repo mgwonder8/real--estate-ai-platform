@@ -6,7 +6,12 @@ import type { PersonalTask, TaskPriority } from "@/lib/data/types";
 // (owner views, site boards, insights) can ever pick them up.
 const TAB = "PersonalTasks";
 const HEADERS = ["id", "from_id", "to_id", "for_id", "title", "remark", "priority", "done", "done_at", "created_at"];
-const PRIORITIES: TaskPriority[] = ["low", "normal", "high", "urgent"];
+const PRIORITIES: TaskPriority[] = ["low", "normal", "urgent"];
+
+function toPriority(value: string | undefined): TaskPriority {
+  if (value === "high") return "urgent";
+  return PRIORITIES.includes(value as TaskPriority) ? (value as TaskPriority) : "normal";
+}
 
 function toPersonalTask(data: Record<string, string>): PersonalTask {
   return {
@@ -16,7 +21,7 @@ function toPersonalTask(data: Record<string, string>): PersonalTask {
     forId: data.for_id || data.to_id,
     title: data.title ?? "",
     remark: data.remark ?? "",
-    priority: PRIORITIES.includes(data.priority as TaskPriority) ? (data.priority as TaskPriority) : "normal",
+    priority: toPriority(data.priority),
     done: data.done === "TRUE" || data.done === "true",
     doneAt: data.done_at ?? "",
     createdAt: data.created_at,

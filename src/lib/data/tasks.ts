@@ -5,7 +5,12 @@ import { addTaskComment } from "@/lib/data/task-comments";
 import type { Role, Task, TaskPriority, TaskStatus } from "@/lib/data/types";
 
 const TAB = "Tasks";
-const PRIORITIES: TaskPriority[] = ["low", "normal", "high", "urgent"];
+const PRIORITIES: TaskPriority[] = ["low", "normal", "urgent"];
+
+function toPriority(value: string | undefined): TaskPriority {
+  if (value === "high") return "urgent";
+  return PRIORITIES.includes(value as TaskPriority) ? (value as TaskPriority) : "normal";
+}
 
 function toTask(data: Record<string, string>): Task {
   return {
@@ -16,7 +21,7 @@ function toTask(data: Record<string, string>): Task {
     siteId: data.site_id,
     assigneeIds: (data.assignee_id ?? "").split(",").map((s) => s.trim()).filter(Boolean),
     createdBy: data.created_by,
-    priority: PRIORITIES.includes(data.priority as TaskPriority) ? (data.priority as TaskPriority) : "normal",
+    priority: toPriority(data.priority),
     deadline: data.deadline,
     status: (data.status as TaskStatus) || "pending",
     proofRequired: data.proof_required === "TRUE" || data.proof_required === "true",
