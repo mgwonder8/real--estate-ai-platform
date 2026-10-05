@@ -12,8 +12,8 @@ export function TaskReviewForm({ taskId }: { taskId: string }) {
   const [comment, setComment] = useState("");
 
   return (
-    <form className="space-y-3 rounded-xl bg-emerald-50/60 p-3 ring-1 ring-emerald-100">
-      <p className="text-sm font-medium text-emerald-900">{t("rv.prompt")}</p>
+    <form className="space-y-3 rounded-xl bg-sky-50/70 p-3 ring-1 ring-sky-100">
+      <p className="text-sm font-medium text-sky-900">{t("rv.prompt")}</p>
       <input type="hidden" name="taskId" value={taskId} />
       <textarea
         name="comment"

@@ -93,7 +93,7 @@ export default async function StaffPage() {
                   <Link href={`/tasks?staff=${s.id}`} className="mt-4 block rounded-xl bg-slate-50 p-3 transition hover:bg-slate-100">
                     <div className="grid grid-cols-4 gap-1 text-center">
                       <Mini value={open} label={tr("st.open")} tone="text-amber-600" />
-                      <Mini value={review} label={tr("st.toApprove")} tone="text-emerald-600" />
+                      <Mini value={review} label={tr("st.toApprove")} tone="text-sky-600" />
                       <Mini value={done} label={tr("st.done")} tone="text-emerald-600" />
                       <Mini value={late} label={tr("st.late")} tone="text-red-600" />
                     </div>

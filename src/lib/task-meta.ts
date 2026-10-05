@@ -22,11 +22,11 @@ export const STATUS_META: Record<
     text: "text-amber-700",
   },
   completed: {
-    dot: "bg-emerald-300",
-    pill: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
-    bar: "bg-emerald-300",
-    soft: "bg-emerald-50/50",
-    text: "text-emerald-700",
+    dot: "bg-sky-500",
+    pill: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-200",
+    bar: "bg-sky-400",
+    soft: "bg-sky-50/70",
+    text: "text-sky-700",
   },
   approved: {
     dot: "bg-emerald-500",
@@ -42,6 +42,60 @@ export const PRIORITY_META: Record<TaskPriority, { dot: string; pill: string; ed
   high: { dot: "bg-orange-500", pill: "bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200", edge: "bg-orange-400", blink: false },
   normal: { dot: "bg-sky-500", pill: "bg-sky-50 text-sky-700 ring-1 ring-inset ring-sky-100", edge: "bg-sky-400", blink: false },
   low: { dot: "bg-slate-300", pill: "bg-slate-100 text-slate-600", edge: "bg-slate-300", blink: false },
+};
+
+/**
+ * The colour a task wears everywhere (dashboard board, task rows, legend):
+ * green done, blue awaiting approval, red urgent or high, yellow in progress, pink scheduled.
+ */
+export type TaskTone = "done" | "review" | "high" | "progress" | "scheduled";
+
+export const TONE_ORDER: TaskTone[] = ["done", "high", "progress", "review", "scheduled"];
+
+export function taskTone(task: Pick<Task, "status" | "priority">): TaskTone {
+  if (task.status === "approved") return "done";
+  if (task.status === "completed") return "review";
+  if (task.priority === "urgent" || task.priority === "high") return "high";
+  if (task.status === "in_progress") return "progress";
+  return "scheduled";
+}
+
+export const TONE_META: Record<TaskTone, { card: string; row: string; edge: string; swatch: string; title: string }> = {
+  done: {
+    card: "border-emerald-200 bg-emerald-50",
+    row: "bg-emerald-50/70 hover:bg-emerald-50",
+    edge: "bg-emerald-500",
+    swatch: "bg-emerald-500",
+    title: "text-emerald-950",
+  },
+  review: {
+    card: "border-sky-200 bg-sky-50",
+    row: "bg-sky-50/60 hover:bg-sky-50",
+    edge: "bg-sky-500",
+    swatch: "bg-sky-500",
+    title: "text-sky-950",
+  },
+  high: {
+    card: "border-red-200 bg-red-50",
+    row: "bg-red-50/50 hover:bg-red-50/80",
+    edge: "bg-red-500",
+    swatch: "bg-red-500",
+    title: "text-red-950",
+  },
+  progress: {
+    card: "border-amber-200 bg-amber-50",
+    row: "bg-amber-50/50 hover:bg-amber-50/80",
+    edge: "bg-amber-400",
+    swatch: "bg-amber-400",
+    title: "text-amber-950",
+  },
+  scheduled: {
+    card: "border-pink-200 bg-pink-50/70",
+    row: "bg-white hover:bg-pink-50/40",
+    edge: "bg-pink-400",
+    swatch: "bg-pink-400",
+    title: "text-slate-900",
+  },
 };
 
 /** Which tab of the task list shows a given status. */

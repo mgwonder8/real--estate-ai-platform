@@ -24,7 +24,7 @@ export function EditStaffForm({ staff, sites }: { staff: Staff; sites: Site[] })
   const [role, setRole] = useState<Role>(staff.role);
   const [primarySiteId, setPrimarySiteId] = useState(staff.siteId);
   const [extraSiteIds, setExtraSiteIds] = useState<string[]>(staff.extraSiteIds);
-  const [teamView, setTeamView] = useState<string[]>(staff.teamViewSiteIds);
+  const [teamHidden, setTeamHidden] = useState<string[]>(staff.teamViewHiddenSiteIds);
   const router = useRouter();
 
   const assignedSites = sites.filter((s) => s.id === primarySiteId || extraSiteIds.includes(s.id));
@@ -68,8 +68,8 @@ export function EditStaffForm({ staff, sites }: { staff: Staff; sites: Site[] })
       ))}
       {role === "site_staff" &&
         assignedSites
-          .filter((s) => teamView.includes(s.id))
-          .map((s) => <input key={s.id} type="hidden" name="teamViewSiteIds" value={s.id} />)}
+          .filter((s) => teamHidden.includes(s.id))
+          .map((s) => <input key={s.id} type="hidden" name="teamViewHiddenSiteIds" value={s.id} />)}
 
       <div>
         <p className="mb-1.5 text-sm font-medium text-slate-800">{t("as.role")}</p>
@@ -157,14 +157,14 @@ export function EditStaffForm({ staff, sites }: { staff: Staff; sites: Site[] })
               </p>
               <div className="mt-3 divide-y divide-slate-100">
                 {assignedSites.map((s) => {
-                  const on = teamView.includes(s.id);
+                  const on = !teamHidden.includes(s.id);
                   return (
                     <button
                       key={s.id}
                       type="button"
                       role="switch"
                       aria-checked={on}
-                      onClick={() => setTeamView((prev) => (on ? prev.filter((x) => x !== s.id) : [...prev, s.id]))}
+                      onClick={() => setTeamHidden((prev) => (on ? [...prev, s.id] : prev.filter((x) => x !== s.id)))}
                       className="flex w-full items-center justify-between gap-3 py-2.5 text-left"
                     >
                       <span className="min-w-0">

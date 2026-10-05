@@ -141,6 +141,7 @@ export const en = {
   "tasks.colTask": "Task",
   "tasks.colUrgency": "Urgency",
   "tasks.colDue": "Due",
+  "tasks.colDone": "Done",
   "tasks.markDone": "Mark {title} as done",
   "tasks.reopen": "Reopen {title}",
   "tasks.undoDone": "Undo done for {title}",
@@ -312,7 +313,7 @@ export const en = {
   "es.save": "Save changes",
   "es.noSite": "No site",
   "es.whatSee": "What {name} can see",
-  "es.whatSeeHelp": "Turn a site on to let them see everyone's tasks there. They can view them but only tick off their own.",
+  "es.whatSeeHelp": "On by default for every site they work at, so they can see everyone's tasks there. They can only tick off their own. Turn a site off to show only their own tasks.",
   "es.everyones": "Everyone's tasks on this site",
   "es.onlyOwn": "Only their own tasks",
   "es.needName": "Name is required.",
@@ -464,6 +465,19 @@ export const en = {
   "voice.couldNot": "Could not understand that. Try again.",
   "voice.notConfigured": "Voice transcription is not configured",
   "voice.noAudio": "No audio provided",
+
+  // Dashboard site board
+  "board.title": "Site board",
+  "board.sub": "Every site at a glance, colour-coded by priority",
+  "board.pctDone": "{pct}% done",
+  "board.more": "+{n} more",
+  "board.openSite": "Open site",
+  "board.empty": "No tasks yet",
+  "tone.done": "Done",
+  "tone.high": "Urgent / High",
+  "tone.progress": "In progress",
+  "tone.review": "Awaiting approval",
+  "tone.scheduled": "Scheduled",
 
   // Language switcher
   "lang.choose": "Choose language",

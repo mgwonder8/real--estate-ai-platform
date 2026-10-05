@@ -20,7 +20,7 @@ export type TaskFilters = { status: View; site: string; staff: string; by: strin
 const VIEWS: { key: View; label: MessageKey; dot?: string }[] = [
   { key: "all", label: "views.all" },
   { key: "open", label: "views.open", dot: "bg-sky-500" },
-  { key: "review", label: "views.review", dot: "bg-emerald-300" },
+  { key: "review", label: "views.review", dot: "bg-sky-500" },
   { key: "done", label: "views.done", dot: "bg-emerald-500" },
   { key: "late", label: "views.late", dot: "bg-red-500" },
 ];

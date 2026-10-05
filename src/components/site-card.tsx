@@ -36,7 +36,7 @@ export async function SiteCard({ site, tasks, people }: { site: Site; tasks: Tas
         <ProgressRing value={pct} size={52} stroke={5} />
         <div className="grid flex-1 grid-cols-3 gap-2 text-center">
           <Metric value={open} label={t("site.open")} tone="text-amber-600" />
-          <Metric value={counts.completed} label={t("site.toApprove")} tone="text-emerald-600" />
+          <Metric value={counts.completed} label={t("site.toApprove")} tone="text-sky-600" />
           <Metric value={late} label={t("site.late")} tone={late ? "text-red-600" : "text-slate-400"} />
         </div>
       </div>

@@ -4,7 +4,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { MeterBar } from "@/components/ui/progress";
 import { DueBadge } from "@/components/ui/status-pill";
-import { SiteCard } from "@/components/site-card";
+import { SiteTaskBoard, type BoardColumn } from "@/components/site-task-board";
 import { listSites } from "@/lib/data/sites";
 import { listTasks } from "@/lib/data/tasks";
 import { listStaff } from "@/lib/data/staff";
@@ -41,10 +41,39 @@ export default async function DashboardPage() {
     .filter((w) => w.total > 0)
     .sort((a, b) => b.open - a.open);
 
+  const byRecent = (a: { updatedAt: string }, b: { updatedAt: string }) => b.updatedAt.localeCompare(a.updatedAt);
+  const BOARD_LIMIT = 8;
+  const columns: BoardColumn[] = sites.map((site) => {
+    const list = tasks.filter((task) => task.siteId === site.id);
+    const ordered = [
+      ...sortByUrgency(list.filter(isOpen)),
+      ...list.filter((task) => task.status === "completed").sort(byRecent),
+      ...list.filter((task) => task.status === "approved").sort(byRecent),
+    ];
+    const done = list.filter((task) => task.status === "approved").length;
+    return {
+      siteId: site.id,
+      name: site.name,
+      pct: list.length ? Math.round((done / list.length) * 100) : 0,
+      open: list.filter(isOpen).length,
+      late: list.filter(isOverdue).length,
+      more: Math.max(0, ordered.length - BOARD_LIMIT),
+      tasks: ordered.slice(0, BOARD_LIMIT).map((task) => ({
+        id: task.id,
+        serial: task.serial,
+        title: task.title,
+        status: task.status,
+        priority: task.priority,
+        deadline: task.deadline,
+        people: task.assigneeIds.map((id) => firstName(staffById[id]?.name)).join(", "),
+      })),
+    };
+  });
+
   const tiles = [
     { key: "open", label: tr("views.open"), value: counts.pending + counts.in_progress, icon: ListTodo, tone: "from-sky-50 to-white text-sky-800", iconTone: "bg-sky-100 text-sky-700" },
     { key: "late", label: tr("views.late"), value: late.length, icon: Clock, tone: "from-red-50 to-white text-red-700", iconTone: "bg-red-100 text-red-600" },
-    { key: "review", label: tr("views.review"), value: counts.completed, icon: Hourglass, tone: "from-emerald-50/60 to-white text-emerald-700", iconTone: "bg-emerald-50 text-emerald-600" },
+    { key: "review", label: tr("views.review"), value: counts.completed, icon: Hourglass, tone: "from-sky-50 to-white text-sky-800", iconTone: "bg-sky-100 text-sky-700" },
     { key: "done", label: tr("views.done"), value: counts.approved, icon: CheckCircle2, tone: "from-emerald-50 to-white text-emerald-800", iconTone: "bg-emerald-100 text-emerald-700" },
   ];
 
@@ -87,25 +116,9 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">{tr("dash.sites")}</h2>
-            <Link href="/sites" className="-my-3 -mr-2 flex min-h-11 items-center px-2 text-[13px] font-medium text-slate-500 hover:text-brand-navy">
-              {tr("dash.seeAll")}
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {sites.map((site) => {
-              const siteTasks = tasks.filter((t) => t.siteId === site.id);
-              const assigned = new Set(siteTasks.flatMap((t) => t.assigneeIds));
-              const people = staff.filter((s) => s.siteId === site.id || assigned.has(s.id));
-              return <SiteCard key={site.id} site={site} tasks={siteTasks} people={people} />;
-            })}
-          </div>
-        </div>
+      <SiteTaskBoard columns={columns} role={session!.user.role} />
 
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader
               title={tr("dash.needsYou")}
@@ -126,7 +139,7 @@ export default async function DashboardPage() {
                 <Link key={t.id} href={`/tasks/${t.id}`} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-slate-50">
                   <span
                     className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                      t.status === "completed" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
+                      t.status === "completed" ? "bg-sky-50 text-sky-600" : "bg-red-50 text-red-600"
                     }`}
                   >
                     {t.status === "completed" ? <Hourglass size={15} /> : <CircleAlert size={15} />}
@@ -142,7 +155,7 @@ export default async function DashboardPage() {
                     </p>
                   </div>
                   {t.status === "completed" ? (
-                    <span className="shrink-0 text-xs font-medium text-emerald-600">{tr("dash.approve")}</span>
+                    <span className="shrink-0 text-xs font-medium text-sky-700">{tr("dash.approve")}</span>
                   ) : (
                     <DueBadge task={t} />
                   )}
@@ -185,7 +198,6 @@ export default async function DashboardPage() {
               </div>
             </Card>
           )}
-        </div>
       </div>
     </>
   );

@@ -12,7 +12,7 @@ export function ExpandableTask({ children, ...line }: LineProps & { children: Re
     <div>
       <TaskLine {...line} open={open} onOpen={() => setOpen((v) => !v)} />
       {open && (
-        <div className={`animate-fade-up border-t border-slate-100 px-4 pb-5 pt-4 sm:pl-[6.25rem] sm:pr-5 ${line.state !== "none" ? "bg-emerald-50/30" : "bg-slate-50/50"}`}>
+        <div className={`animate-fade-up border-t border-slate-100 px-4 pb-5 pt-4 sm:pl-16 sm:pr-5 ${line.state !== "none" ? "bg-emerald-50/30" : "bg-slate-50/50"}`}>
           {children}
         </div>
       )}

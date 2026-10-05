@@ -57,8 +57,8 @@ export async function updateStaffAction(
   const siteId = String(formData.get("siteId") ?? "");
   const extraSiteIds = formData.getAll("extraSiteIds").map(String).filter(Boolean);
   const assigned = [siteId, ...extraSiteIds].filter(Boolean);
-  const teamViewSiteIds = formData
-    .getAll("teamViewSiteIds")
+  const teamViewHiddenSiteIds = formData
+    .getAll("teamViewHiddenSiteIds")
     .map(String)
     .filter((sid) => assigned.includes(sid));
   const phone = String(formData.get("phone") ?? "");
@@ -67,7 +67,7 @@ export async function updateStaffAction(
     return { status: "error", message: (await getT())("es.needName") };
   }
 
-  await updateStaff(id, { name, role, siteId, extraSiteIds, teamViewSiteIds, phone });
+  await updateStaff(id, { name, role, siteId, extraSiteIds, teamViewHiddenSiteIds, phone });
 
   revalidatePath("/staff");
   revalidatePath("/tasks");

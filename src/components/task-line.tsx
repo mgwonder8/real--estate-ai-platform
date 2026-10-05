@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, ChevronDown, MapPin } from "lucide-react";
 import { DueBadge, PriorityPill, UrgencyDot } from "@/components/ui/status-pill";
-import { PRIORITY_META } from "@/lib/task-meta";
+import { TONE_META, taskTone } from "@/lib/task-meta";
 import { useT } from "@/lib/i18n/client";
 import type { CheckState } from "@/lib/task-meta";
 import type { TaskPriority, TaskStatus } from "@/lib/data/types";
@@ -47,22 +47,17 @@ export function TaskLine({
 }) {
   const t = useT();
   const finished = state !== "none";
-  const tone =
-    state === "full"
-      ? "bg-emerald-50 hover:bg-emerald-100/60"
-      : state === "half"
-        ? "bg-emerald-50/50 hover:bg-emerald-50"
-        : "bg-white hover:bg-slate-50/80";
-  const edge = finished ? "bg-emerald-500" : PRIORITY_META[priority].edge;
+  const status: TaskStatus = state === "full" ? "approved" : state === "half" ? "completed" : (due?.status ?? "pending");
+  const tone = TONE_META[taskTone({ status, priority })];
   const toLabel = toNames?.length ? toNames.join(", ") : "";
   const showPill = priority !== "normal" || finished;
 
   const body = (
     <>
       <span className="block">
-        <span className={`break-words text-[15px] font-semibold leading-snug ${finished ? "text-emerald-900" : "text-slate-900"}`}>{title}</span>
+        <span className={`break-words text-[15px] font-semibold leading-snug ${tone.title}`}>{title}</span>
         {state === "half" && (
-          <span className="ml-2 inline-block whitespace-nowrap rounded-full bg-emerald-100 px-2 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+          <span className="ml-2 inline-block whitespace-nowrap rounded-full bg-sky-100 px-2 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-sky-700">
             {t("status.completed")}
           </span>
         )}
@@ -113,12 +108,11 @@ export function TaskLine({
   const bodyClass = "flex min-w-0 flex-1 flex-col py-2.5 text-left";
 
   return (
-    <div className={`relative flex items-start gap-1 pl-1 pr-2 transition-colors sm:gap-2 sm:pl-3 sm:pr-4 ${tone}`}>
-      <span className={`absolute inset-y-0 left-0 w-1 ${edge}`} />
-      <span className={`mt-[11px] hidden w-9 shrink-0 font-mono text-xs font-semibold tabular-nums sm:block ${finished ? "text-emerald-600" : "text-slate-400"}`}>
+    <div className={`relative flex items-start gap-1 pl-4 pr-1 transition-colors sm:gap-2 sm:pl-5 sm:pr-2 ${tone.row}`}>
+      <span className={`absolute inset-y-0 left-0 w-1 ${tone.edge}`} />
+      <span className={`mt-[13px] hidden w-9 shrink-0 font-mono text-xs font-semibold tabular-nums sm:block ${finished ? "text-emerald-600" : "text-slate-400"}`}>
         {serial}
       </span>
-      <span className="shrink-0">{check}</span>
 
       {href ? (
         <Link href={href} className={bodyClass}>
@@ -149,12 +143,13 @@ export function TaskLine({
         </span>
       )}
 
-      {onOpen && <ChevronDown size={18} className={`mt-3.5 shrink-0 text-slate-300 transition ${open ? "rotate-180" : ""}`} />}
       {!onOpen && !columns && priority === "urgent" && !finished && (
         <span className="mt-4 shrink-0 sm:hidden">
           <UrgencyDot priority={priority} size="md" />
         </span>
       )}
+      <span className="shrink-0 pt-px">{check}</span>
+      {onOpen && <ChevronDown size={18} className={`-ml-1 mt-3.5 shrink-0 text-slate-300 transition ${open ? "rotate-180" : ""}`} />}
     </div>
   );
 }
@@ -162,14 +157,14 @@ export function TaskLine({
 export function TaskLineHeader() {
   const t = useT();
   return (
-    <div className="hidden items-center gap-2 border-b border-slate-100 bg-slate-50/80 py-2 pl-3 pr-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400 lg:flex">
+    <div className="hidden items-center gap-2 border-b border-slate-100 bg-slate-50/80 py-2 pl-5 pr-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 lg:flex">
       <span className="w-9 shrink-0">{t("tasks.colNo")}</span>
-      <span className="w-11 shrink-0" />
       <span className="flex-1">{t("tasks.colTask")}</span>
       <span className={`shrink-0 ${COL.by}`}>{t("tasks.assignedBy")}</span>
       <span className={`shrink-0 ${COL.to}`}>{t("tasks.assignedTo")}</span>
       <span className={`shrink-0 ${COL.urgency}`}>{t("tasks.colUrgency")}</span>
       <span className={`shrink-0 ${COL.due}`}>{t("tasks.colDue")}</span>
+      <span className="w-11 shrink-0 text-center">{t("tasks.colDone")}</span>
     </div>
   );
 }

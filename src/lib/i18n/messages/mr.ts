@@ -143,6 +143,7 @@ export const mr: Messages = {
   "tasks.colTask": "काम",
   "tasks.colUrgency": "प्राधान्य",
   "tasks.colDue": "तारीख",
+  "tasks.colDone": "पूर्ण",
   "tasks.markDone": "{title} पूर्ण म्हणून चिन्हांकित करा",
   "tasks.reopen": "{title} पुन्हा उघडा",
   "tasks.undoDone": "{title} चे पूर्ण होणे मागे घ्या",
@@ -314,7 +315,7 @@ export const mr: Messages = {
   "es.save": "बदल सेव्ह करा",
   "es.noSite": "साइट नाही",
   "es.whatSee": "{name} काय पाहू शकतात",
-  "es.whatSeeHelp": "एखादी साइट चालू करा म्हणजे ते तेथील सर्वांची कामे पाहू शकतील. ते पाहू शकतात, पण फक्त स्वतःची कामे पूर्ण करू शकतात.",
+  "es.whatSeeHelp": "ते ज्या साइटवर काम करतात तेथे हे आधीपासून चालू असते, म्हणजे ते सर्वांची कामे पाहू शकतात. ते फक्त स्वतःची कामे पूर्ण करू शकतात. एखादी साइट बंद केल्यास त्यांना फक्त स्वतःची कामे दिसतील.",
   "es.everyones": "या साइटवरील सर्वांची कामे",
   "es.onlyOwn": "फक्त त्यांची स्वतःची कामे",
   "es.needName": "नाव आवश्यक आहे.",
@@ -466,6 +467,19 @@ export const mr: Messages = {
   "voice.couldNot": "समजले नाही. पुन्हा प्रयत्न करा.",
   "voice.notConfigured": "आवाजावरून लिहिण्याची सुविधा सुरू नाही",
   "voice.noAudio": "आवाज मिळाला नाही",
+
+  // Dashboard site board
+  "board.title": "साइट बोर्ड",
+  "board.sub": "प्रत्येक साइट एका नजरेत, प्राधान्याच्या रंगांसह",
+  "board.pctDone": "{pct}% पूर्ण",
+  "board.more": "+{n} आणखी",
+  "board.openSite": "साइट उघडा",
+  "board.empty": "अजून कोणतेही काम नाही",
+  "tone.done": "पूर्ण",
+  "tone.high": "तातडीचे / महत्त्वाचे",
+  "tone.progress": "सुरू आहे",
+  "tone.review": "मंजुरीच्या प्रतीक्षेत",
+  "tone.scheduled": "नियोजित",
 
   // Language switcher
   "lang.choose": "भाषा निवडा",

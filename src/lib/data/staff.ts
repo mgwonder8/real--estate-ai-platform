@@ -15,7 +15,7 @@ function toStaff(data: Record<string, string>): Staff {
     role: (data.role as Role) || "site_staff",
     siteId: data.site_id,
     extraSiteIds: idList(data.extra_site_ids),
-    teamViewSiteIds: idList(data.team_view_site_ids),
+    teamViewHiddenSiteIds: idList(data.team_view_hidden_site_ids),
     phone: data.phone,
     email: data.email,
     active: data.active === "TRUE" || data.active === "true",
@@ -27,10 +27,9 @@ export function allSiteIds(staff: Staff): string[] {
   return [staff.siteId, ...staff.extraSiteIds].filter(Boolean);
 }
 
-/** Sites where this person may see teammates' tasks: granted by the owner and still assigned. */
+/** Sites where this person sees teammates' tasks: every site they work at, unless the owner turned it off. */
 export function teamViewSites(staff: Staff): string[] {
-  const assigned = allSiteIds(staff);
-  return staff.teamViewSiteIds.filter((id) => assigned.includes(id));
+  return allSiteIds(staff).filter((id) => !staff.teamViewHiddenSiteIds.includes(id));
 }
 
 export async function listStaff(): Promise<Staff[]> {
@@ -68,7 +67,7 @@ export async function createStaff(input: {
     role: input.role,
     siteId: input.siteId ?? "",
     extraSiteIds: input.extraSiteIds ?? [],
-    teamViewSiteIds: [],
+    teamViewHiddenSiteIds: [],
     phone: input.phone ?? "",
     email: input.email,
     active: true,
@@ -90,9 +89,9 @@ export async function createStaff(input: {
 
 export async function updateStaff(
   id: string,
-  input: { name: string; role: Role; siteId: string; extraSiteIds: string[]; teamViewSiteIds: string[]; phone: string }
+  input: { name: string; role: Role; siteId: string; extraSiteIds: string[]; teamViewHiddenSiteIds: string[]; phone: string }
 ): Promise<void> {
-  await ensureTable(TAB, ["team_view_site_ids"]);
+  await ensureTable(TAB, ["team_view_hidden_site_ids"]);
   const row = await findRowById(TAB, id);
   if (!row) throw new Error(`Staff not found: ${id}`);
   await updateRow(TAB, row.rowNumber, {
@@ -101,7 +100,7 @@ export async function updateStaff(
     role: input.role,
     site_id: input.siteId,
     extra_site_ids: input.extraSiteIds.join(","),
-    team_view_site_ids: input.teamViewSiteIds.join(","),
+    team_view_hidden_site_ids: input.teamViewHiddenSiteIds.join(","),
     phone: input.phone,
   });
 }

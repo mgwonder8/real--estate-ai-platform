@@ -143,6 +143,7 @@ export const hi: Messages = {
   "tasks.colTask": "काम",
   "tasks.colUrgency": "प्राथमिकता",
   "tasks.colDue": "तारीख",
+  "tasks.colDone": "पूरा",
   "tasks.markDone": "{title} को पूरा मार्क करें",
   "tasks.reopen": "{title} फिर से खोलें",
   "tasks.undoDone": "{title} का पूरा होना वापस लें",
@@ -314,7 +315,7 @@ export const hi: Messages = {
   "es.save": "बदलाव सेव करें",
   "es.noSite": "कोई साइट नहीं",
   "es.whatSee": "{name} क्या देख सकते हैं",
-  "es.whatSeeHelp": "किसी साइट को चालू करें ताकि वे वहाँ सबके काम देख सकें। वे देख सकते हैं, पर सिर्फ़ अपने काम पूरे कर सकते हैं।",
+  "es.whatSeeHelp": "जिन साइट पर वे काम करते हैं, वहाँ यह पहले से चालू रहता है, ताकि वे सबके काम देख सकें। वे सिर्फ़ अपने काम पूरे कर सकते हैं। किसी साइट को बंद करें तो उन्हें सिर्फ़ अपने काम दिखेंगे।",
   "es.everyones": "इस साइट पर सबके काम",
   "es.onlyOwn": "सिर्फ़ उनके अपने काम",
   "es.needName": "नाम ज़रूरी है।",
@@ -466,6 +467,19 @@ export const hi: Messages = {
   "voice.couldNot": "बात समझ नहीं आई। फिर कोशिश करें।",
   "voice.notConfigured": "आवाज़ से लिखने की सुविधा चालू नहीं है",
   "voice.noAudio": "कोई आवाज़ नहीं मिली",
+
+  // Dashboard site board
+  "board.title": "साइट बोर्ड",
+  "board.sub": "हर साइट एक नज़र में, प्राथमिकता के रंगों के साथ",
+  "board.pctDone": "{pct}% पूरा",
+  "board.more": "+{n} और",
+  "board.openSite": "साइट खोलें",
+  "board.empty": "अभी कोई काम नहीं",
+  "tone.done": "पूरा",
+  "tone.high": "तुरंत / ज़रूरी",
+  "tone.progress": "जारी है",
+  "tone.review": "मंज़ूरी की प्रतीक्षा में",
+  "tone.scheduled": "निर्धारित",
 
   // Language switcher
   "lang.choose": "भाषा चुनें",

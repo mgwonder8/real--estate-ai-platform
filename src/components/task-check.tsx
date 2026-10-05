@@ -6,7 +6,7 @@ import type { CheckState } from "@/lib/task-meta";
 
 const LOOK: Record<CheckState, string> = {
   none: "border-2 border-slate-300 bg-white text-transparent group-hover:border-emerald-500 group-hover:text-emerald-300",
-  half: "border-2 border-emerald-400 bg-emerald-100 text-emerald-600",
+  half: "border-2 border-sky-400 bg-sky-100 text-sky-600",
   full: "border-2 border-emerald-500 bg-emerald-500 text-white",
 };
 

@@ -21,8 +21,8 @@ export interface Staff {
   role: Role;
   siteId: string;
   extraSiteIds: string[];
-  /** Sites where this person can see every teammate's tasks, not just their own. */
-  teamViewSiteIds: string[];
+  /** Sites where the owner has turned off seeing teammates' tasks. Everywhere else it is on. */
+  teamViewHiddenSiteIds: string[];
   phone: string;
   email: string;
   active: boolean;
