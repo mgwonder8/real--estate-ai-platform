@@ -253,6 +253,16 @@ export const hi: Messages = {
   "pf.note": "टिप्पणी (वैकल्पिक)",
   "pf.locating": "स्थान लिया जा रहा है",
   "pf.send": "तस्वीर भेजें",
+  "ss.yourSites": "आपके स्थल",
+  "ss.noSites": "अभी आपको कोई स्थल नहीं सौंपा गया है",
+  "ss.details": "विवरण",
+  "ss.openSite": "खोलें",
+  "pf.upload": "प्रमाण अपलोड करें",
+  "pf.sendApproval": "स्वीकृति के लिए भेजें",
+  "pf.noPhoto": "बिना तस्वीर के पूर्ण करें",
+  "pf.photoFirst": "कृपया पहले तस्वीर जोड़ें",
+  "pf.sentApproval": "स्वीकृति के लिए भेज दिया गया",
+  "pf.uploadHint": "तस्वीर लें या फ़ाइल चुनें। यह सीधे कार्यालय को जाएगी।",
   "pf.failed": "प्रमाण नहीं भेजा जा सका",
 
   // Query form

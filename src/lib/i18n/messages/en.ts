@@ -248,6 +248,16 @@ export const en = {
   "pf.note": "Note (optional)",
   "pf.locating": "Getting location",
   "pf.send": "Send photo",
+  "ss.yourSites": "Your sites",
+  "ss.noSites": "No site has been given to you yet",
+  "ss.details": "Details",
+  "ss.openSite": "Open",
+  "pf.upload": "Upload proof",
+  "pf.sendApproval": "Send for approval",
+  "pf.noPhoto": "Finish without a photo",
+  "pf.photoFirst": "Please add a photo first",
+  "pf.sentApproval": "Sent for approval",
+  "pf.uploadHint": "Take a photo or pick a file. It goes straight to the office.",
   "pf.failed": "Failed to submit proof",
 
   // Query form

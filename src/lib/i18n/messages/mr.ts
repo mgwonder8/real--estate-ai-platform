@@ -253,6 +253,16 @@ export const mr: Messages = {
   "pf.note": "शेरा (ऐच्छिक)",
   "pf.locating": "स्थान घेत आहे",
   "pf.send": "छायाचित्र पाठवा",
+  "ss.yourSites": "तुमची स्थळे",
+  "ss.noSites": "अजून तुम्हाला कोणतेही स्थळ दिलेले नाही",
+  "ss.details": "तपशील",
+  "ss.openSite": "उघडा",
+  "pf.upload": "पुरावा अपलोड करा",
+  "pf.sendApproval": "मंजुरीसाठी पाठवा",
+  "pf.noPhoto": "छायाचित्राशिवाय पूर्ण करा",
+  "pf.photoFirst": "कृपया आधी छायाचित्र जोडा",
+  "pf.sentApproval": "मंजुरीसाठी पाठवले",
+  "pf.uploadHint": "छायाचित्र घ्या किंवा फाइल निवडा. ती थेट कार्यालयाकडे जाईल.",
   "pf.failed": "पुरावा पाठवता आला नाही",
 
   // Query form

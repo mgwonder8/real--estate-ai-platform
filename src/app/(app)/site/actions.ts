@@ -2,13 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { getTask } from "@/lib/data/tasks";
+import { getTask, updateTaskStatus } from "@/lib/data/tasks";
 import { addProof } from "@/lib/data/proofs";
 import { raiseQuery } from "@/lib/data/queries";
 import { addTaskComment } from "@/lib/data/task-comments";
 import { saveProofFile } from "@/lib/storage/upload";
 import { listOfficeAndOwnerStaffIds } from "@/lib/data/staff";
 import { notifyManyStaff } from "@/lib/push/send";
+import { isOpen } from "@/lib/task-meta";
+import { after } from "next/server";
 import { getT } from "@/lib/i18n/server";
 import type { Role } from "@/lib/data/types";
 
@@ -36,7 +38,7 @@ export async function submitProofAction(
   const t = await getT();
 
   try {
-    const { session } = await requireOwnTask(taskId);
+    const { session, task } = await requireOwnTask(taskId);
 
     const photo = formData.get("photo") as File | null;
     let photoUrl = "";
@@ -49,16 +51,31 @@ export async function submitProofAction(
       photoUrl = uploaded.url;
     }
 
-    await addProof({
-      taskId,
-      submittedBy: session.user.id,
-      photoUrl,
-      notes: String(formData.get("notes") ?? ""),
-      gpsLat: String(formData.get("gpsLat") ?? ""),
-      gpsLng: String(formData.get("gpsLng") ?? ""),
-    });
+    const noPhoto = formData.get("noPhoto") === "1";
+    if (!photoUrl && !(noPhoto && !task.proofRequired)) throw new Error(t("pf.photoFirst"));
 
-    revalidatePath("/site");
+    const notes = String(formData.get("notes") ?? "").trim();
+    if (photoUrl || notes) {
+      await addProof({
+        taskId,
+        submittedBy: session.user.id,
+        photoUrl,
+        notes,
+        gpsLat: String(formData.get("gpsLat") ?? ""),
+        gpsLng: String(formData.get("gpsLng") ?? ""),
+      });
+    }
+
+    // Sending proof is how staff finish a task: it goes straight to the office for approval.
+    if (isOpen(task)) {
+      await updateTaskStatus({ taskId, toStatus: "completed", changedBy: session.user.id });
+      after(async () => {
+        const recipients = await listOfficeAndOwnerStaffIds();
+        await notifyManyStaff(recipients, { title: "Task done, awaiting approval", body: task.title, url: `/tasks/${taskId}` });
+      });
+    }
+
+    revalidatePath("/site", "layout");
     revalidatePath("/tasks", "layout");
     revalidatePath("/sites", "layout");
     return { status: "success" };

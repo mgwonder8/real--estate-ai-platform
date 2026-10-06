@@ -6,7 +6,7 @@ import { isOverdue, statusCounts } from "@/lib/task-meta";
 import { getT } from "@/lib/i18n/server";
 import type { Site, Staff, Task } from "@/lib/data/types";
 
-export async function SiteCard({ site, tasks, people }: { site: Site; tasks: Task[]; people: Staff[] }) {
+export async function SiteCard({ site, tasks, people, href }: { site: Site; tasks: Task[]; people: Staff[]; href?: string }) {
   const t = await getT();
   const counts = statusCounts(tasks);
   const late = tasks.filter(isOverdue).length;
@@ -15,7 +15,7 @@ export async function SiteCard({ site, tasks, people }: { site: Site; tasks: Tas
 
   return (
     <Link
-      href={`/sites/${site.id}`}
+      href={href ?? `/sites/${site.id}`}
       className="group flex flex-col rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-200/60"
     >
       <div className="flex items-start justify-between gap-3">
