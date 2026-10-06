@@ -1,10 +1,13 @@
 import { Building2 } from "lucide-react";
 import { auth } from "@/auth";
 import { Card, EmptyState } from "@/components/ui/card";
-import { SiteCard } from "@/components/site-card";
+import { SiteTaskBoard, type BoardColumn } from "@/components/site-task-board";
 import { listTasks } from "@/lib/data/tasks";
 import { listSites } from "@/lib/data/sites";
-import { allSiteIds, getStaff, listStaff } from "@/lib/data/staff";
+import { allSiteIds, getStaff, listStaff, teamViewSites } from "@/lib/data/staff";
+import { firstName, isOpen, isOverdue, sortByUrgency } from "@/lib/task-meta";
+import { assignerName } from "@/lib/roles";
+import type { Task } from "@/lib/data/types";
 import { listQueriesRaisedBy } from "@/lib/data/queries";
 import { greetingIST, greetingName } from "@/lib/greeting";
 import { getT } from "@/lib/i18n/server";
@@ -18,10 +21,49 @@ export default async function SiteStaffPage() {
   const [meStaff, tasks, sites, staff, queries] = await Promise.all([getStaff(me), listTasks(), listSites(), listStaff(), listQueriesRaisedBy(me)]);
 
   const mySiteIds = meStaff ? allSiteIds(meStaff) : [session!.user.siteId].filter(Boolean);
-  const mySites = mySiteIds.map((id) => sites.find((s) => s.id === id)).filter((s) => !!s);
+  const staffById = Object.fromEntries(staff.map((x) => [x.id, x]));
+  const teamSiteIds = meStaff ? teamViewSites(meStaff) : [];
+  const byRecent = (x: Task, y: Task) => y.updatedAt.localeCompare(x.updatedAt);
+  const LIMIT = 8;
+
+  // Same colour-coded board as the owner's dashboard: one column per site, each opening that site's tasks.
+  const columns: BoardColumn[] = mySiteIds.flatMap((siteId) => {
+    const site = sites.find((x) => x.id === siteId);
+    if (!site) return [];
+    const list = tasks.filter((task) => task.siteId === siteId && (task.assigneeIds.includes(me) || teamSiteIds.includes(siteId)));
+    const ordered = [
+      ...sortByUrgency(list.filter(isOpen)),
+      ...list.filter((task) => task.status === "completed").sort(byRecent),
+      ...list.filter((task) => task.status === "approved").sort(byRecent),
+    ];
+    const done = list.filter((task) => task.status === "approved").length;
+    return [
+      {
+        siteId,
+        name: site.name,
+        href: `/site/${siteId}`,
+        pct: list.length ? Math.round((done / list.length) * 100) : 0,
+        open: list.filter(isOpen).length,
+        late: list.filter(isOverdue).length,
+        more: Math.max(0, ordered.length - LIMIT),
+        tasks: ordered.slice(0, LIMIT).map((task) => ({
+          id: task.id,
+          serial: task.serial,
+          title: task.title,
+          status: task.status,
+          priority: task.priority,
+          deadline: task.deadline,
+          people: task.assigneeIds.map((id) => (id === me ? tr("common.you") : firstName(staffById[id]?.name))).join(", "),
+          by: task.createdBy === me ? tr("common.you") : assignerName(staffById[task.createdBy], tr),
+          href: `/site/${siteId}`,
+          canTick: false,
+        })),
+      },
+    ];
+  });
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-6xl">
       <div className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
           {greetingIST(tr)}, {greetingName(session!.user.name)}
@@ -29,21 +71,15 @@ export default async function SiteStaffPage() {
         <p className="mt-0.5 text-sm text-slate-500">{tr("ss.yourSites")}</p>
       </div>
 
-      {mySites.length === 0 ? (
+      {columns.length === 0 ? (
         <Card>
           <EmptyState icon={<Building2 size={20} />} title={tr("ss.noSites")} />
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {mySites.map((site) => {
-            const siteTasks = tasks.filter((task) => task.siteId === site.id);
-            const assigned = new Set(siteTasks.flatMap((task) => task.assigneeIds));
-            const people = staff.filter((s) => s.role !== "owner" && (s.siteId === site.id || assigned.has(s.id)));
-            return <SiteCard key={site.id} site={site} tasks={siteTasks} people={people} href={`/site/${site.id}`} />;
-          })}
+        <div>
+          <SiteTaskBoard columns={columns} role="site_staff" seeAllHref={null} />
         </div>
       )}
-
 
       <Card className="mt-8 p-4 sm:p-5">
         <p className="mb-3 text-sm font-semibold text-slate-900">{tr("ss.needHelp")}</p>
