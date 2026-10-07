@@ -56,7 +56,7 @@ export default async function SiteStaffPage() {
           people: task.assigneeIds.map((id) => (id === me ? tr("common.you") : firstName(staffById[id]?.name))).join(", "),
           by: task.createdBy === me ? tr("common.you") : assignerName(staffById[task.createdBy], tr),
           href: `/site/${siteId}`,
-          canTick: false,
+          canTick: task.assigneeIds.includes(me),
         })),
       },
     ];

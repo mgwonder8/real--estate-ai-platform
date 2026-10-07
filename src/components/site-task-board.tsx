@@ -120,7 +120,7 @@ function BoardCard({ task, role }: { task: BoardTask; role: string }) {
   const state = checkStateOf(task.status);
   const next = task.canTick ? nextCheckStatus(task.status, role) : null;
   return (
-    <div className={`relative flex items-start gap-1 overflow-hidden rounded-xl border py-2 pl-3.5 ${role === "site_staff" ? "pr-2.5" : "pr-0.5"} transition hover:shadow-sm ${tone.card}`}>
+    <div className={`relative flex items-start gap-1 overflow-hidden rounded-xl border py-2 pl-3.5 pr-0.5 transition hover:shadow-sm ${tone.card}`}>
       <span className={`absolute inset-y-0 left-0 w-1 ${tone.edge}`} />
       <CardBody href={task.href}>
         <span className="flex items-start gap-1.5">
@@ -148,15 +148,13 @@ function BoardCard({ task, role }: { task: BoardTask; role: string }) {
           <DueBadge task={task} />
         </span>
       </CardBody>
-      {role !== "site_staff" && (
-        <TaskCheck
-          id={task.id}
-          state={state}
-          next={next ? checkStateOf(next) : null}
-          action={toggleTaskDoneAction}
-          label={state === "full" ? t("tasks.reopen", { title: task.title }) : t("tasks.markDone", { title: task.title })}
-        />
-      )}
+      <TaskCheck
+        id={task.id}
+        state={state}
+        next={next ? checkStateOf(next) : null}
+        action={toggleTaskDoneAction}
+        label={state === "full" ? t("tasks.reopen", { title: task.title }) : t("tasks.markDone", { title: task.title })}
+      />
     </div>
   );
 }
